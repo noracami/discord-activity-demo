@@ -1,0 +1,14 @@
+{
+  "name": "@nakama/runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --outfile=build/index.js --format=esm --target=es2020 --external:nakama-runtime",
+    "watch": "esbuild src/main.ts --bundle --outfile=build/index.js --format=esm --target=es2020 --external:nakama-runtime --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}

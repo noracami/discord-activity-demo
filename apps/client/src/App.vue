@@ -1,21 +1,21 @@
 <template>
   <div class="app">
     <!-- Loading State -->
-    <div v-if="discord.isLoading" class="center-container">
-      <LoadingSpinner message="連接 Discord 中..." />
+    <div v-if="discord.isLoading || nakama.isConnecting" class="center-container">
+      <LoadingSpinner :message="loadingMessage" />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="discord.error" class="center-container error-container">
+    <div v-else-if="discord.error || nakama.error" class="center-container error-container">
       <p class="error-title">連接失敗</p>
-      <p class="error-message">{{ discord.error }}</p>
-      <button class="btn-primary" @click="discord.initialize">
+      <p class="error-message">{{ discord.error || nakama.error }}</p>
+      <button class="btn-primary" @click="initialize">
         重試
       </button>
     </div>
 
-    <!-- Authenticated State -->
-    <div v-else-if="discord.isAuthenticated" class="main-container">
+    <!-- Connected State -->
+    <div v-else-if="discord.isAuthenticated && nakama.isConnected" class="main-container">
       <header class="header">
         <div class="user-info">
           <img
@@ -25,19 +25,51 @@
             class="avatar"
           />
           <span class="username">{{ discord.displayName }}</span>
+          <span class="role-badge" :class="game.myRole">
+            {{ roleLabel }}
+          </span>
         </div>
-        <div class="channel-info">
-          <span class="label">頻道 ID:</span>
-          <code>{{ discord.channelId || 'N/A' }}</code>
+        <div class="connection-status">
+          <span class="status-dot connected"></span>
+          <span>已連接</span>
         </div>
       </header>
 
       <main class="content">
-        <p class="status-text">Discord 連接成功！等待 Nakama 整合...</p>
+        <div class="game-info">
+          <p>遊戲階段: <strong>{{ phaseLabel }}</strong></p>
+          <p v-if="game.currentTurn">
+            目前回合: <strong>{{ game.currentTurn === 'player1' ? 'O' : 'X' }}</strong>
+            <span v-if="game.isMyTurn" class="your-turn">(你的回合)</span>
+          </p>
+        </div>
+
+        <!-- Join Button -->
+        <button
+          v-if="game.canJoin"
+          class="btn-primary btn-large"
+          @click="nakama.joinGame"
+        >
+          加入遊戲
+        </button>
+
+        <!-- Ready Button -->
+        <button
+          v-if="showReadyButton"
+          class="btn-success btn-large"
+          @click="nakama.ready"
+        >
+          準備
+        </button>
+
+        <!-- Game Board Placeholder -->
+        <div class="board-placeholder">
+          <p>遊戲棋盤（Phase 4 實作）</p>
+        </div>
       </main>
     </div>
 
-    <!-- Initial State (shouldn't normally show) -->
+    <!-- Initial State -->
     <div v-else class="center-container">
       <LoadingSpinner message="初始化中..." />
     </div>
@@ -45,14 +77,78 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useDiscordStore } from '@/stores';
+import { onMounted, computed, watch } from 'vue';
+import { useDiscordStore, useNakamaStore, useGameStore } from '@/stores';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 
 const discord = useDiscordStore();
+const nakama = useNakamaStore();
+const game = useGameStore();
+
+const loadingMessage = computed(() => {
+  if (discord.isLoading) return '連接 Discord 中...';
+  if (nakama.isConnecting) return '連接遊戲伺服器中...';
+  return '載入中...';
+});
+
+const roleLabel = computed(() => {
+  switch (game.myRole) {
+    case 'player1': return 'O';
+    case 'player2': return 'X';
+    default: return '觀戰';
+  }
+});
+
+const phaseLabel = computed(() => {
+  switch (game.phase) {
+    case 'waiting': return '等待玩家';
+    case 'ready': return '準備中';
+    case 'playing': return '遊戲中';
+    case 'ended': return '遊戲結束';
+    default: return game.phase;
+  }
+});
+
+const showReadyButton = computed(() => {
+  if (game.phase !== 'ready' && game.phase !== 'waiting') return false;
+  if (game.myRole === 'spectator') return false;
+  if (game.myRole === 'player1' && game.player1Ready) return false;
+  if (game.myRole === 'player2' && game.player2Ready) return false;
+  return true;
+});
+
+async function initialize() {
+  await discord.initialize();
+}
+
+// Watch for Discord auth completion to connect Nakama
+watch(
+  () => discord.isAuthenticated,
+  async (isAuth) => {
+    if (isAuth && discord.user && discord.channelId) {
+      await nakama.connect(
+        discord.user.id,
+        discord.user.username,
+        discord.channelId
+      );
+      // Set my role after connection
+      game.setMyRole(discord.user.id);
+    }
+  }
+);
+
+// Update role when players change
+watch(
+  () => [game.player1, game.player2],
+  () => {
+    if (discord.user) {
+      game.setMyRole(discord.user.id);
+    }
+  }
+);
 
 onMounted(() => {
-  discord.initialize();
+  initialize();
 });
 </script>
 
@@ -121,35 +217,83 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.channel-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.role-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
   font-size: 12px;
+  font-weight: 600;
 }
 
-.label {
+.role-badge.player1 {
+  background-color: #5865f2;
+  color: white;
+}
+
+.role-badge.player2 {
+  background-color: #ed4245;
+  color: white;
+}
+
+.role-badge.spectator {
+  background-color: #4f545c;
   color: #b9bbbe;
 }
 
-code {
-  background-color: #202225;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 11px;
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #b9bbbe;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.connected {
+  background-color: #3ba55c;
 }
 
 .content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  gap: 20px;
 }
 
-.status-text {
+.game-info {
+  text-align: center;
+  color: #b9bbbe;
+}
+
+.game-info p {
+  margin: 4px 0;
+}
+
+.your-turn {
   color: #3ba55c;
+  font-weight: 600;
+}
+
+.btn-large {
+  padding: 12px 32px;
   font-size: 16px;
+}
+
+.board-placeholder {
+  width: 300px;
+  height: 300px;
+  background-color: #2f3136;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #72767d;
 }
 </style>
