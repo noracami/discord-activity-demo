@@ -1,5 +1,24 @@
 # Discord Activity「無盡圈圈叉叉」實作計畫
 
+---
+## 📍 目前進度 (2024-12-31)
+
+**已完成:** Phase 1 ~ Phase 3
+**下一步:** Phase 4 大廳與準備階段 (UI 元件)
+
+### 待辦事項
+- [ ] 實作大廳 UI (LobbyView, PlayerSlot)
+- [ ] 實作遊戲棋盤 UI (GameBoard, GameCell, GamePiece)
+- [ ] 實作計時器 UI (TurnTimer)
+- [ ] 實作結算畫面 (GameResult)
+- [ ] Phase 3 完成後設定 CI/CD (GitHub Actions + Zeabur)
+
+### 環境變數待設定
+- `apps/server/.env` → DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
+- `apps/client/.env` → VITE_DISCORD_CLIENT_ID
+
+---
+
 ## 1. Monorepo 資料夾結構
 
 ```
@@ -52,26 +71,28 @@ discord-activity-demo/
 
 ## 2. 開發階段
 
-### Phase 1: 基礎建設
-- [ ] 設定 pnpm workspace 與 TypeScript 專案參照
-- [ ] 建立 `packages/shared` (OpCodes、型別定義)
-- [ ] 設定 Docker Compose (Nakama + PostgreSQL)
-- [ ] 建立 `.gitignore` 與 `.env.example`
+### Phase 1: 基礎建設 ✅
+- [x] 設定 pnpm workspace 與 TypeScript 專案參照
+- [x] 建立 `packages/shared` (OpCodes、型別定義)
+- [x] 設定 Docker Compose (Nakama + PostgreSQL)
+- [x] 建立 `.gitignore` 與 `.env.example`
 
-### Phase 2: Discord 整合
-- [ ] 建立 `apps/server` Express 伺服器
-- [ ] 實作 Discord OAuth2 token 交換 endpoint
-- [ ] 建立 `apps/client` Vue 3 + Vite 專案
-- [ ] 實作 Discord SDK 初始化與認證流程
-- [ ] 取得頻道 ID 與使用者資訊
+### Phase 2: Discord 整合 ✅
+- [x] 建立 `apps/server` Express 伺服器
+- [x] 實作 Discord OAuth2 token 交換 endpoint
+- [x] 建立 `apps/client` Vue 3 + Vite 專案
+- [x] 實作 Discord SDK 初始化與認證流程
+- [x] 取得頻道 ID 與使用者資訊
 
-### Phase 3: Nakama 整合
-- [ ] 建立 `packages/nakama` 專案結構
-- [ ] 實作基礎 Match Handler (init, join, leave)
-- [ ] 實作 RPC: `find_or_create_match`
-- [ ] 前端 Nakama Client 連接與訊息監聽
+### Phase 3: Nakama 整合 ✅
+- [x] 建立 `packages/nakama` 專案結構
+- [x] 實作基礎 Match Handler (init, join, leave, loop)
+- [x] 實作 RPC: `find_or_create_match`
+- [x] 前端 Nakama Client 連接與訊息監聯
+- [x] 實作訊息處理 (JOIN_GAME, READY, MOVE, KICK, REMATCH)
+- [x] 實作回合超時自動落子邏輯
 
-### Phase 4: 大廳與準備階段
+### Phase 4: 大廳與準備階段 ⬜ (下一步)
 - [ ] 實作加入遊戲功能 (JOIN_GAME)
 - [ ] 實作玩家/觀戰者狀態切換
 - [ ] 實作準備機制 (READY/UNREADY)
