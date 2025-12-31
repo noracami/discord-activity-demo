@@ -1,12 +1,21 @@
 {
   "name": "discord-activity-demo",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Discord Activity - Infinite Tic-Tac-Toe",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "dev:client": "pnpm --filter @app/client dev",
+    "dev:server": "pnpm --filter @app/server dev",
+    "dev:nakama": "pnpm --filter @nakama/runtime watch",
+    "build:nakama": "pnpm --filter @nakama/runtime build",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "tunnel": "cloudflared tunnel --url http://localhost:5173"
   },
-  "keywords": [],
+  "keywords": ["discord", "activity", "nakama", "game"],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.14.0"
