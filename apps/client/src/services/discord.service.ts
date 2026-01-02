@@ -1,7 +1,13 @@
-import { DiscordSDK } from '@discord/embedded-app-sdk';
+import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
 import type { DiscordUser } from '@/types/discord.types';
 
 let discordSdk: DiscordSDK | null = null;
+
+// Setup URL mappings for Discord proxy
+// This patches fetch/WebSocket to work through Discord's proxy
+patchUrlMappings([
+  { prefix: '/api', target: 'ouroboros-api.zeabur.app/api' },
+]);
 
 /**
  * Get the Discord SDK instance
@@ -66,6 +72,64 @@ export async function authorizeDiscord(): Promise<string> {
 
   const { access_token } = await response.json();
   return access_token;
+}
+
+/**
+ * Combined authorize and authenticate flow
+ * Uses the new Discord SDK pattern for Activities
+ */
+export async function setupDiscordAuth(): Promise<{
+  accessToken: string;
+  user: DiscordUser;
+}> {
+  const sdk = getDiscordSdk();
+  const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
+
+  // For Activities, we need to use the proper OAuth2 flow
+  const { code } = await sdk.commands.authorize({
+    client_id: clientId,
+    response_type: 'code',
+    state: '',
+    prompt: 'none',
+    scope: ['identify', 'guilds'],
+  });
+
+  // Exchange code for access token via our server
+  const response = await fetch('/api/auth/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Token exchange failed:', errorText);
+    throw new Error('Failed to exchange token');
+  }
+
+  const { access_token } = await response.json();
+
+  // Authenticate with the access token
+  const auth = await sdk.commands.authenticate({
+    access_token,
+  });
+
+  if (!auth.user) {
+    throw new Error('Failed to get user info');
+  }
+
+  return {
+    accessToken: access_token,
+    user: {
+      id: auth.user.id,
+      username: auth.user.username,
+      discriminator: auth.user.discriminator,
+      avatar: auth.user.avatar ?? null,
+      global_name: auth.user.global_name ?? null,
+    },
+  };
 }
 
 /**
