@@ -6,18 +6,24 @@ WORKDIR /app
 # Copy files
 COPY . .
 
-# Debug: show what directory we have
-RUN ls -la /app/ && cat /app/package.json | head -5
+# Debug: show directory structure
+RUN echo "=== Directory structure ===" && ls -la /app/
 
-# Handle both cases: full monorepo or just apps/client
-# If apps/client exists, we have full monorepo
-RUN if [ -d "/app/apps/client" ]; then \
-      echo "Full monorepo detected, switching to apps/client"; \
-      cd /app/apps/client; \
+# Prepare client directory - handle monorepo structure
+# Move client code to /build for consistent paths
+RUN mkdir -p /build && \
+    if [ -d "/app/apps/client" ]; then \
+      echo "Full monorepo detected"; \
+      cp -r /app/apps/client/* /build/; \
+    else \
+      echo "Standalone client detected"; \
+      cp -r /app/* /build/; \
     fi
 
-# Set working directory based on structure
-WORKDIR /app/apps/client
+WORKDIR /build
+
+# Debug: show build directory
+RUN echo "=== Build directory ===" && ls -la /build/
 
 # Create shared types locally
 RUN mkdir -p src/shared
@@ -32,20 +38,23 @@ RUN wget -O src/shared/index.ts https://raw.githubusercontent.com/noracami/disco
 RUN find src -name "*.ts" -o -name "*.vue" | xargs sed -i "s|from '@shared/types'|from '@/shared'|g" && \
     find src -name "*.ts" -o -name "*.vue" | xargs sed -i "s|'@shared/types'|'@/shared'|g"
 
-# Remove workspace dependency
+# Remove workspace dependency from package.json
 RUN sed -i '/"@shared\/types"/d' package.json
+
+# Debug: show package.json
+RUN echo "=== package.json ===" && cat package.json
 
 # Install dependencies
 RUN npm install
 
-# Build
-RUN npm run build
+# Build with vite directly (not pnpm)
+RUN npx vite build
 
 # Production stage
 FROM nginx:alpine
 
-COPY --from=builder /app/apps/client/dist /usr/share/nginx/html
-COPY --from=builder /app/apps/client/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /build/dist /usr/share/nginx/html
+COPY --from=builder /build/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
