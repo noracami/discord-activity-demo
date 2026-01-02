@@ -11,6 +11,11 @@ COPY . .
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
+# Debug: Check what files are available
+RUN echo "=== Root /app ===" && ls -la /app/ && \
+    echo "=== Packages ===" && ls -la /app/packages/ 2>/dev/null || echo "No packages dir" && \
+    echo "=== Nakama ===" && ls -la /app/packages/nakama/ 2>/dev/null || echo "No nakama dir"
+
 # Build nakama runtime module directly with esbuild
 WORKDIR /app/packages/nakama
 RUN npx esbuild src/main.ts --bundle --outfile=build/index.js --format=esm --target=es2020 --external:nakama-runtime
