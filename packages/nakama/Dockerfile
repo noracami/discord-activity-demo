@@ -11,8 +11,12 @@ COPY . .
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
-# Build nakama runtime module
-RUN pnpm --filter @nakama/runtime build
+# Build nakama runtime module in its directory
+WORKDIR /app/packages/nakama
+RUN pnpm build
+
+# Verify build output
+RUN ls -la build/
 
 # Production stage - Nakama server with custom modules
 FROM registry.heroiclabs.com/heroiclabs/nakama:3.24.2
