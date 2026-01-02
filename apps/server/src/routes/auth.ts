@@ -44,7 +44,7 @@ router.post('/token', async (req, res) => {
       return;
     }
 
-    const data = await response.json();
+    const data = await response.json() as { access_token: string };
     res.json({ access_token: data.access_token });
   } catch (error) {
     console.error('Token exchange error:', error);
