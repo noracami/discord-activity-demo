@@ -1,13 +1,7 @@
-import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
+import { DiscordSDK } from '@discord/embedded-app-sdk';
 import type { DiscordUser } from '@/types/discord.types';
 
 let discordSdk: DiscordSDK | null = null;
-
-// Setup URL mappings for Discord proxy
-// This patches fetch/WebSocket to work through Discord's proxy
-patchUrlMappings([
-  { prefix: '/api', target: 'ouroboros-api.zeabur.app/api' },
-]);
 
 /**
  * Get the Discord SDK instance
@@ -58,7 +52,8 @@ export async function authorizeDiscord(): Promise<string> {
   });
 
   // Exchange code for access token via our server
-  const response = await fetch('/api/auth/token', {
+  // Use /.proxy/ prefix for Discord Activity sandbox
+  const response = await fetch('/.proxy/api/auth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -95,7 +90,8 @@ export async function setupDiscordAuth(): Promise<{
   });
 
   // Exchange code for access token via our server
-  const response = await fetch('/api/auth/token', {
+  // Use /.proxy/ prefix for Discord Activity sandbox
+  const response = await fetch('/.proxy/api/auth/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
