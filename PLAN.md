@@ -1,10 +1,26 @@
 # Discord Activity「無盡圈圈叉叉」實作計畫
 
 ---
-## 📍 目前進度 (2025-01-02)
+## 📍 目前進度 (2026-01-02)
 
-**已完成:** Phase 1 ~ Phase 4 (大廳 UI)
+**已完成:** Phase 1 ~ Phase 4 (大廳 UI)、Zeabur 部署、Discord Activity 連接測試
 **下一步:** Phase 5 核心遊戲 (棋盤 UI)
+
+### POC 驗證狀態
+
+| 功能 | 狀態 | 備註 |
+|------|------|------|
+| Discord OAuth2 認證 | ✅ 完成 | Token 交換正常 |
+| Discord Activity 載入 | ✅ 完成 | 透過 URL Mappings 代理 |
+| Nakama 連接 | ✅ 完成 | WebSocket 透過 Discord 代理 |
+| 大廳 UI | ✅ 完成 | 玩家卡片、VS 分隔、觀戰狀態 |
+| 玩家加入/離開 | 🔄 待驗證 | 需兩人測試 |
+| 準備機制 | 🔄 待驗證 | 需兩人測試 |
+| 遊戲棋盤 | ❌ 未開發 | Phase 5 |
+| FIFO 機制 | ❌ 未開發 | Phase 5 |
+| 勝負判定 | ❌ 未開發 | Phase 5 |
+| 結算畫面 | ❌ 未開發 | Phase 6 |
+| 重賽機制 | ❌ 未開發 | Phase 6 |
 
 ### 待辦事項
 - [ ] 實作遊戲棋盤 UI (GameBoard, GameCell, GamePiece)
@@ -12,9 +28,30 @@
 - [ ] 實作結算畫面 (GameResult)
 - [ ] Phase 完成後設定 CI/CD (GitHub Actions + Zeabur)
 
+### DevOps 待辦
+- [ ] 設定 Zeabur 只在對應服務有更動時才 rebuild（目前改一次三個服務都會 rebuild）
+- [ ] 設定部署完成通知
+
 ### 環境變數待設定
 - `apps/server/.env` → DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
 - `apps/client/.env` → VITE_DISCORD_CLIENT_ID
+
+### 部署資訊 (Zeabur)
+
+| 服務 | Domain | 說明 |
+|------|--------|------|
+| Client | `ouroboros.zeabur.app` | Vue 3 前端 |
+| Server | `ouroboros-api.zeabur.app` | Express OAuth2 代理 |
+| Nakama | `ouroboros-nakama.zeabur.app` | 遊戲伺服器 |
+| PostgreSQL | (內部連接) | Nakama 資料庫 |
+
+### Discord URL Mappings
+
+| Prefix | Target |
+|--------|--------|
+| `/` | `https://ouroboros.zeabur.app` |
+| `/api` | `https://ouroboros-api.zeabur.app/api` |
+| `/nakama` | `https://ouroboros-nakama.zeabur.app` |
 
 ---
 
