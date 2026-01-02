@@ -1,10 +1,9 @@
 import { Client, Session, Socket } from '@heroiclabs/nakama-js';
-import { patchUrlMappings } from '@discord/embedded-app-sdk';
 
 let client: Client | null = null;
 let session: Session | null = null;
 let socket: Socket | null = null;
-let urlMappingsPatched = false;
+let wsPatched = false;
 
 /**
  * Check if running inside Discord Activity iframe
@@ -15,37 +14,68 @@ function isDiscordActivity(): boolean {
 }
 
 /**
- * Setup URL mappings for Discord proxy (patches fetch and WebSocket)
+ * Patch WebSocket and fetch to route through Discord proxy
  */
-function setupDiscordProxy(): void {
-  if (urlMappingsPatched) return;
+function patchNetworkForDiscord(): void {
+  if (wsPatched || !isDiscordActivity()) return;
 
-  if (isDiscordActivity()) {
-    patchUrlMappings([
-      { prefix: '/nakama', target: 'ouroboros-nakama.zeabur.app' },
-    ]);
-    urlMappingsPatched = true;
-    console.log('Discord URL mappings patched for Nakama');
-  }
+  const discordHost = window.location.hostname;
+
+  // Patch WebSocket
+  const OriginalWebSocket = window.WebSocket;
+  // @ts-ignore
+  window.WebSocket = function(url: string, protocols?: string | string[]) {
+    if (url.includes('ouroboros-nakama.zeabur.app')) {
+      const urlObj = new URL(url);
+      const newUrl = `wss://${discordHost}/.proxy/nakama${urlObj.pathname}${urlObj.search}`;
+      console.log('Rewriting WebSocket URL:', url, '->', newUrl);
+      return new OriginalWebSocket(newUrl, protocols);
+    }
+    return new OriginalWebSocket(url, protocols);
+  };
+  window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+  window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+  window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+  window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+  window.WebSocket.prototype = OriginalWebSocket.prototype;
+
+  // Patch fetch for Nakama HTTP requests
+  const originalFetch = window.fetch;
+  window.fetch = function(input: RequestInfo | URL, init?: RequestInit) {
+    let url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    if (url.includes('ouroboros-nakama.zeabur.app')) {
+      const urlObj = new URL(url);
+      const newUrl = `https://${discordHost}/.proxy/nakama${urlObj.pathname}${urlObj.search}`;
+      console.log('Rewriting fetch URL:', url, '->', newUrl);
+      return originalFetch(newUrl, init);
+    }
+    return originalFetch(input, init);
+  };
+
+  wsPatched = true;
+  console.log('Network patched for Discord proxy');
 }
+
+// Patch network early
+patchNetworkForDiscord();
 
 /**
  * Get or create Nakama client
  */
 export function getNakamaClient(): Client {
   if (!client) {
-    // Setup Discord proxy if needed
-    setupDiscordProxy();
-
     if (isDiscordActivity()) {
-      // In Discord Activity, connect through proxy
-      // patchUrlMappings will rewrite the URL
+      // In Discord Activity, use the real Nakama host
+      // The WebSocket patch will rewrite the URL to use Discord proxy
       client = new Client(
         'defaultkey',
         'ouroboros-nakama.zeabur.app',
         '443',
         true
       );
+
+      console.log('Nakama client created for Discord Activity');
     } else {
       // Local development
       const host = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
