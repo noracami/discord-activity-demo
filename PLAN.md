@@ -53,6 +53,12 @@
 | `/api` | `https://ouroboros-api.zeabur.app/api` |
 | `/nakama` | `https://ouroboros-nakama.zeabur.app` |
 
+### 已知限制
+
+| 限制 | 說明 | 解決方案 |
+|------|------|----------|
+| 伺服器人數限制 | 未認證的 Application 只能在成員 ≤ 25 人的伺服器使用 Activity | 申請 Discord Application 認證 |
+
 ---
 
 ## 1. Monorepo 資料夾結構
