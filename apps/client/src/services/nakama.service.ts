@@ -23,8 +23,7 @@ function patchNetworkForDiscord(): void {
 
   // Patch WebSocket
   const OriginalWebSocket = window.WebSocket;
-  // @ts-ignore
-  window.WebSocket = function(url: string, protocols?: string | string[]) {
+  const PatchedWebSocket = function(url: string, protocols?: string | string[]) {
     if (url.includes('ouroboros-nakama.zeabur.app')) {
       const urlObj = new URL(url);
       const newUrl = `wss://${discordHost}/.proxy/nakama${urlObj.pathname}${urlObj.search}`;
@@ -32,12 +31,18 @@ function patchNetworkForDiscord(): void {
       return new OriginalWebSocket(newUrl, protocols);
     }
     return new OriginalWebSocket(url, protocols);
-  };
-  window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
-  window.WebSocket.OPEN = OriginalWebSocket.OPEN;
-  window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
-  window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
-  window.WebSocket.prototype = OriginalWebSocket.prototype;
+  } as unknown as typeof WebSocket;
+
+  // Copy static properties and prototype
+  Object.defineProperties(PatchedWebSocket, {
+    CONNECTING: { value: OriginalWebSocket.CONNECTING },
+    OPEN: { value: OriginalWebSocket.OPEN },
+    CLOSING: { value: OriginalWebSocket.CLOSING },
+    CLOSED: { value: OriginalWebSocket.CLOSED },
+    prototype: { value: OriginalWebSocket.prototype },
+  });
+
+  window.WebSocket = PatchedWebSocket;
 
   // Patch fetch for Nakama HTTP requests
   const originalFetch = window.fetch;

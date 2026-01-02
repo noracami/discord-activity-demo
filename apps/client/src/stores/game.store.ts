@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { OpCode } from '@shared/types';
+import { OpCode, GAME_CONSTANTS } from '@shared/types';
 import type {
   GamePhase,
   PlayerRole,
   Player,
   BoardState,
   RematchVotes,
+  Piece,
 } from '@shared/types';
 
 export const useGameStore = defineStore('game', () => {
@@ -19,6 +20,7 @@ export const useGameStore = defineStore('game', () => {
   const player1Ready = ref(false);
   const player2Ready = ref(false);
   const readyStartTime = ref<number | null>(null);
+  const turnStartTime = ref<number | null>(null);
   const winner = ref<'player1' | 'player2' | null>(null);
   const winReason = ref<'three_in_row' | 'opponent_left' | null>(null);
   const rematchVotes = ref<RematchVotes>({ player1: null, player2: null });
@@ -69,6 +71,7 @@ export const useGameStore = defineStore('game', () => {
       case OpCode.GAME_START:
         phase.value = 'playing';
         currentTurn.value = data.firstTurn;
+        turnStartTime.value = Date.now();
         break;
 
       case OpCode.MOVE_MADE:
@@ -77,6 +80,7 @@ export const useGameStore = defineStore('game', () => {
 
       case OpCode.TURN_CHANGE:
         currentTurn.value = data.currentTurn;
+        turnStartTime.value = Date.now();
         break;
 
       case OpCode.GAME_END:
@@ -164,6 +168,44 @@ export const useGameStore = defineStore('game', () => {
       placedAt: Date.now(),
       isAboutToRemove: false,
     };
+
+    // Update isAboutToRemove flags for FIFO visual indication
+    updateAboutToRemoveFlags();
+  }
+
+  function updateAboutToRemoveFlags() {
+    // Collect pieces by player, sorted by placedAt
+    const playerPieces: { player1: Piece[], player2: Piece[] } = {
+      player1: [],
+      player2: [],
+    };
+
+    board.value.forEach((piece) => {
+      if (piece) {
+        const owner = piece.owner as 'player1' | 'player2';
+        playerPieces[owner].push(piece);
+      }
+    });
+
+    // Sort by placedAt (oldest first)
+    playerPieces.player1.sort((a, b) => a.placedAt - b.placedAt);
+    playerPieces.player2.sort((a, b) => a.placedAt - b.placedAt);
+
+    // Reset all flags first
+    board.value.forEach((piece) => {
+      if (piece) {
+        piece.isAboutToRemove = false;
+      }
+    });
+
+    // Mark oldest piece as about to remove when player has MAX pieces
+    const MAX_PIECES = GAME_CONSTANTS.MAX_PIECES_PER_PLAYER;
+    if (playerPieces.player1.length >= MAX_PIECES) {
+      playerPieces.player1[0].isAboutToRemove = true;
+    }
+    if (playerPieces.player2.length >= MAX_PIECES) {
+      playerPieces.player2[0].isAboutToRemove = true;
+    }
   }
 
   function handlePlayerKicked(data: any) {
@@ -197,6 +239,7 @@ export const useGameStore = defineStore('game', () => {
     player1Ready.value = false;
     player2Ready.value = false;
     readyStartTime.value = null;
+    turnStartTime.value = null;
     winner.value = null;
     winReason.value = null;
     rematchVotes.value = { player1: null, player2: null };
@@ -214,6 +257,7 @@ export const useGameStore = defineStore('game', () => {
     player1Ready,
     player2Ready,
     readyStartTime,
+    turnStartTime,
     winner,
     winReason,
     rematchVotes,

@@ -40,18 +40,7 @@
         <LobbyView v-if="game.phase === 'waiting' || game.phase === 'ready'" />
 
         <!-- Game View (playing phase) -->
-        <div v-else-if="game.phase === 'playing'" class="game-view">
-          <div class="game-info">
-            <p>
-              目前回合: <strong>{{ game.currentTurn === 'player1' ? 'O' : 'X' }}</strong>
-              <span v-if="game.isMyTurn" class="your-turn">(你的回合)</span>
-            </p>
-          </div>
-          <!-- Game Board Placeholder -->
-          <div class="board-placeholder">
-            <p>遊戲棋盤（Phase 5 實作）</p>
-          </div>
-        </div>
+        <GameView v-else-if="game.phase === 'playing'" />
 
         <!-- Game Ended View -->
         <div v-else-if="game.phase === 'ended'" class="game-ended">
@@ -86,6 +75,7 @@ import { onMounted, computed, watch } from 'vue';
 import { useDiscordStore, useNakamaStore, useGameStore } from '@/stores';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import LobbyView from '@/components/lobby/LobbyView.vue';
+import { GameView } from '@/components/game';
 
 const discord = useDiscordStore();
 const nakama = useNakamaStore();
@@ -252,39 +242,6 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  gap: 20px;
-}
-
-.game-info {
-  text-align: center;
-  color: #b9bbbe;
-}
-
-.game-info p {
-  margin: 4px 0;
-}
-
-.your-turn {
-  color: #3ba55c;
-  font-weight: 600;
-}
-
-.board-placeholder {
-  width: 300px;
-  height: 300px;
-  background-color: #2f3136;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #72767d;
-}
-
-/* Game View */
-.game-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 20px;
 }
 
