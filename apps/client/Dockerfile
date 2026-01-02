@@ -1,30 +1,35 @@
 # Build stage
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-
 WORKDIR /app
 
-# Copy entire monorepo (requires Root Directory = "/" in Zeabur)
+# Copy client files (Zeabur copies apps/client to /app)
 COPY . .
 
-# Install all workspace dependencies
-RUN pnpm install --no-frozen-lockfile
+# Create shared types locally (inline the types)
+RUN mkdir -p /app/src/shared
 
-# Build shared types first
-RUN pnpm --filter @shared/types build
+# Download shared types from GitHub raw
+RUN wget -O /app/src/shared/index.ts https://raw.githubusercontent.com/noracami/discord-activity-demo/main/packages/shared/src/index.ts && \
+    wget -O /app/src/shared/opcodes.ts https://raw.githubusercontent.com/noracami/discord-activity-demo/main/packages/shared/src/opcodes.ts && \
+    wget -O /app/src/shared/game-types.ts https://raw.githubusercontent.com/noracami/discord-activity-demo/main/packages/shared/src/game-types.ts && \
+    wget -O /app/src/shared/constants.ts https://raw.githubusercontent.com/noracami/discord-activity-demo/main/packages/shared/src/constants.ts
 
-# Build client
-RUN pnpm --filter @app/client build
+# Update imports from @shared/types to ./shared or ../shared
+RUN find /app/src -name "*.ts" -o -name "*.vue" | xargs sed -i "s|from '@shared/types'|from '@/shared'|g" && \
+    find /app/src -name "*.ts" -o -name "*.vue" | xargs sed -i "s|'@shared/types'|'@/shared'|g"
+
+# Install dependencies
+RUN npm install
+
+# Build
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Copy built files
-COPY --from=builder /app/apps/client/dist /usr/share/nginx/html
-
-# Copy nginx config
-COPY --from=builder /app/apps/client/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
