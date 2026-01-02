@@ -1,19 +1,58 @@
 import { Client, Session, Socket } from '@heroiclabs/nakama-js';
+import { patchUrlMappings } from '@discord/embedded-app-sdk';
 
 let client: Client | null = null;
 let session: Session | null = null;
 let socket: Socket | null = null;
+let urlMappingsPatched = false;
+
+/**
+ * Check if running inside Discord Activity iframe
+ */
+function isDiscordActivity(): boolean {
+  return typeof window !== 'undefined' &&
+         window.location.hostname.includes('discordsays.com');
+}
+
+/**
+ * Setup URL mappings for Discord proxy (patches fetch and WebSocket)
+ */
+function setupDiscordProxy(): void {
+  if (urlMappingsPatched) return;
+
+  if (isDiscordActivity()) {
+    patchUrlMappings([
+      { prefix: '/nakama', target: 'ouroboros-nakama.zeabur.app' },
+    ]);
+    urlMappingsPatched = true;
+    console.log('Discord URL mappings patched for Nakama');
+  }
+}
 
 /**
  * Get or create Nakama client
  */
 export function getNakamaClient(): Client {
   if (!client) {
-    const host = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
-    const port = import.meta.env.VITE_NAKAMA_PORT || '7350';
-    const useSSL = import.meta.env.VITE_NAKAMA_USE_SSL === 'true';
+    // Setup Discord proxy if needed
+    setupDiscordProxy();
 
-    client = new Client('defaultkey', host, port, useSSL);
+    if (isDiscordActivity()) {
+      // In Discord Activity, connect through proxy
+      // patchUrlMappings will rewrite the URL
+      client = new Client(
+        'defaultkey',
+        'ouroboros-nakama.zeabur.app',
+        '443',
+        true
+      );
+    } else {
+      // Local development
+      const host = import.meta.env.VITE_NAKAMA_HOST || 'localhost';
+      const port = import.meta.env.VITE_NAKAMA_PORT || '7350';
+      const useSSL = import.meta.env.VITE_NAKAMA_USE_SSL === 'true';
+      client = new Client('defaultkey', host, port, useSSL);
+    }
   }
   return client;
 }
