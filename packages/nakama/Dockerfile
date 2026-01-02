@@ -16,12 +16,16 @@ RUN echo "=== Root /app ===" && ls -la /app/ && \
     echo "=== Packages ===" && ls -la /app/packages/ 2>/dev/null || echo "No packages dir" && \
     echo "=== Nakama ===" && ls -la /app/packages/nakama/ 2>/dev/null || echo "No nakama dir"
 
-# Build nakama runtime module directly with esbuild
-WORKDIR /app/packages/nakama
-RUN npx esbuild src/main.ts --bundle --outfile=build/index.js --format=esm --target=es2020 --external:nakama-runtime
+# Build nakama runtime module with absolute paths
+RUN npx esbuild /app/packages/nakama/src/main.ts \
+    --bundle \
+    --outfile=/app/packages/nakama/build/index.js \
+    --format=esm \
+    --target=es2020 \
+    --external:nakama-runtime
 
 # Verify build output
-RUN ls -la build/
+RUN ls -la /app/packages/nakama/build/
 
 # Production stage - Nakama server with custom modules
 FROM registry.heroiclabs.com/heroiclabs/nakama:3.24.2
