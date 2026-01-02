@@ -1,17 +1,16 @@
 # Discord Activity「無盡圈圈叉叉」實作計畫
 
 ---
-## 📍 目前進度 (2024-12-31)
+## 📍 目前進度 (2025-01-02)
 
-**已完成:** Phase 1 ~ Phase 3
-**下一步:** Phase 4 大廳與準備階段 (UI 元件)
+**已完成:** Phase 1 ~ Phase 4 (大廳 UI)
+**下一步:** Phase 5 核心遊戲 (棋盤 UI)
 
 ### 待辦事項
-- [ ] 實作大廳 UI (LobbyView, PlayerSlot)
 - [ ] 實作遊戲棋盤 UI (GameBoard, GameCell, GamePiece)
 - [ ] 實作計時器 UI (TurnTimer)
 - [ ] 實作結算畫面 (GameResult)
-- [ ] Phase 3 完成後設定 CI/CD (GitHub Actions + Zeabur)
+- [ ] Phase 完成後設定 CI/CD (GitHub Actions + Zeabur)
 
 ### 環境變數待設定
 - `apps/server/.env` → DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
@@ -92,11 +91,13 @@ discord-activity-demo/
 - [x] 實作訊息處理 (JOIN_GAME, READY, MOVE, KICK, REMATCH)
 - [x] 實作回合超時自動落子邏輯
 
-### Phase 4: 大廳與準備階段 ⬜ (下一步)
-- [ ] 實作加入遊戲功能 (JOIN_GAME)
-- [ ] 實作玩家/觀戰者狀態切換
-- [ ] 實作準備機制 (READY/UNREADY)
-- [ ] 實作 30 秒準備超時與踢出功能
+### Phase 4: 大廳與準備階段 🔄 (進行中)
+- [x] 實作大廳 UI (LobbyView, PlayerSlot)
+- [x] 實作準備計時器 UI (ReadyTimer)
+- [x] 實作加入遊戲功能 (JOIN_GAME)
+- [x] 實作玩家/觀戰者狀態切換
+- [x] 實作準備機制 (READY/UNREADY)
+- [x] 實作 30 秒準備超時與踢出功能
 
 ### Phase 5: 核心遊戲
 - [ ] 實作棋盤狀態管理與落子驗證

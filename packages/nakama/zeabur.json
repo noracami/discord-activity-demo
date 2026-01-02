@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.zeabur.app/zeabur.json",
+  "build": {
+    "type": "dockerfile",
+    "dockerfile": "packages/nakama/Dockerfile",
+    "root_directory": "/"
+  }
+}

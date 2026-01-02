@@ -18,6 +18,7 @@ export const useGameStore = defineStore('game', () => {
   const currentTurn = ref<'player1' | 'player2' | null>(null);
   const player1Ready = ref(false);
   const player2Ready = ref(false);
+  const readyStartTime = ref<number | null>(null);
   const winner = ref<'player1' | 'player2' | null>(null);
   const winReason = ref<'three_in_row' | 'opponent_left' | null>(null);
   const rematchVotes = ref<RematchVotes>({ player1: null, player2: null });
@@ -106,6 +107,7 @@ export const useGameStore = defineStore('game', () => {
     currentTurn.value = data.currentTurn;
     player1Ready.value = data.player1Ready;
     player2Ready.value = data.player2Ready;
+    readyStartTime.value = data.readyStartTime;
     winner.value = data.winner;
     winReason.value = data.winReason;
     rematchVotes.value = data.rematchVotes;
@@ -194,6 +196,7 @@ export const useGameStore = defineStore('game', () => {
     currentTurn.value = null;
     player1Ready.value = false;
     player2Ready.value = false;
+    readyStartTime.value = null;
     winner.value = null;
     winReason.value = null;
     rematchVotes.value = { player1: null, player2: null };
@@ -210,6 +213,7 @@ export const useGameStore = defineStore('game', () => {
     currentTurn,
     player1Ready,
     player2Ready,
+    readyStartTime,
     winner,
     winReason,
     rematchVotes,

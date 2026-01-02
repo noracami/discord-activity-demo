@@ -1,0 +1,27 @@
+name: nakama-prod
+
+logger:
+  level: INFO
+  stdout: true
+
+session:
+  token_expiry_sec: 7200
+
+socket:
+  max_message_size_bytes: 4096
+  max_request_size_bytes: 131072
+  read_buffer_size_bytes: 4096
+  write_buffer_size_bytes: 4096
+  read_timeout_ms: 10000
+  write_timeout_ms: 10000
+  ping_period_ms: 15000
+  pong_wait_ms: 25000
+
+runtime:
+  js_entrypoint: "build/index.js"
+
+console:
+  # Override with environment variables in production
+  # NAKAMA_CONSOLE_USERNAME, NAKAMA_CONSOLE_PASSWORD
+  username: "admin"
+  password: "admin"
