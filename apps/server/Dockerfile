@@ -1,35 +1,28 @@
 # Build stage
 FROM node:20-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-
 WORKDIR /app
 
-# Copy all workspace files (Zeabur sets root as build context)
+# Copy server package files (Zeabur copies apps/server content to /app)
 COPY . .
 
 # Install dependencies
-RUN pnpm install --no-frozen-lockfile
+RUN npm install
 
 # Build server
-RUN pnpm --filter @app/server build
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine
 
-RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-
 WORKDIR /app
 
-# Copy package files for production install
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml ./
-COPY --from=builder /app/apps/server/package.json ./apps/server/
-COPY --from=builder /app/apps/server/dist ./apps/server/dist
+# Copy built files and package.json
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
 
 # Install production dependencies
-RUN pnpm install --no-frozen-lockfile --prod
-
-WORKDIR /app/apps/server
+RUN npm install --omit=dev
 
 EXPOSE 3001
 

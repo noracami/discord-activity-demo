@@ -5,11 +5,14 @@ RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
 
 WORKDIR /app
 
-# Copy all workspace files (Zeabur sets root as build context)
+# Copy entire monorepo (requires Root Directory = "/" in Zeabur)
 COPY . .
 
-# Install dependencies
+# Install all workspace dependencies
 RUN pnpm install --no-frozen-lockfile
+
+# Build shared types first
+RUN pnpm --filter @shared/types build
 
 # Build client
 RUN pnpm --filter @app/client build

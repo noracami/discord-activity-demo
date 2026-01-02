@@ -2,7 +2,6 @@
   "$schema": "https://schema.zeabur.app/zeabur.json",
   "build": {
     "type": "dockerfile",
-    "dockerfile": "apps/client/Dockerfile",
-    "root_directory": "/"
+    "dockerfile": "apps/client/Dockerfile"
   }
 }
