@@ -225,8 +225,11 @@ export const useNakamaStore = defineStore('nakama', () => {
   }
 
   // Game actions (convenience methods)
-  function joinGame(avatarUrl?: string) {
-    sendMessage(OpCode.JOIN_GAME, { avatarUrl: avatarUrl || '' });
+  function joinGame(avatarUrl?: string, nickname?: string) {
+    sendMessage(OpCode.JOIN_GAME, {
+      avatarUrl: avatarUrl || '',
+      nickname: nickname || '',
+    });
   }
 
   function leaveGame() {

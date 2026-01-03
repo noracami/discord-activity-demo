@@ -115,11 +115,11 @@ const canKickPlayer2 = computed((): boolean => {
 });
 
 function handleJoinAsPlayer1() {
-  nakama.joinGame(discord.avatarUrl || undefined);
+  nakama.joinGame(discord.avatarUrl || undefined, discord.displayName || undefined);
 }
 
 function handleJoinAsPlayer2() {
-  nakama.joinGame(discord.avatarUrl || undefined);
+  nakama.joinGame(discord.avatarUrl || undefined, discord.displayName || undefined);
 }
 
 function handleToggleReady() {

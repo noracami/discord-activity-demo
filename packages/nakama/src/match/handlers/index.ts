@@ -8,7 +8,7 @@ import { buildStateSyncPayload, checkWinner, makeMove, resetForRematch } from '.
 export function handleJoinGame(
   state: MatchState,
   sender: nkruntime.Presence,
-  data: { avatarUrl?: string },
+  data: { avatarUrl?: string; nickname?: string },
   dispatcher: nkruntime.MatchDispatcher,
   logger: nkruntime.Logger
 ): MatchState {
@@ -51,12 +51,12 @@ export function handleJoinGame(
     return state;
   }
 
-  // Join as player
+  // Join as player - use nickname if provided, fallback to sender.username
   const player = {
     odiscrdId: sender.userId,
     nakamaId: sender.userId,
     sessionId: sender.sessionId,
-    username: sender.username,
+    username: data.nickname || sender.username,
     avatarUrl: data.avatarUrl || '',
     isDisconnected: false,
     disconnectedAtTick: null,
@@ -75,7 +75,7 @@ export function handleJoinGame(
     OpCode.PLAYER_JOINED,
     JSON.stringify({
       odiscrdId: sender.userId,
-      username: sender.username,
+      username: data.nickname || sender.username,
       avatarUrl: data.avatarUrl || '',
       role: emptySlot,
     }),
