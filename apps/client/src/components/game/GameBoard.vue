@@ -8,6 +8,7 @@
       :player="getPlayerForPiece(cell)"
       :isClickable="canClickCell(index)"
       :isAboutToRemove="cell?.isAboutToRemove ?? false"
+      :isWinningCell="winningCells.includes(index)"
       @cellClick="handleCellClick"
     />
   </div>
@@ -22,6 +23,7 @@ const props = defineProps<{
   player1: Player | null;
   player2: Player | null;
   isMyTurn: boolean;
+  winningCells: number[];
 }>();
 
 const emit = defineEmits<{

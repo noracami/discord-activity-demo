@@ -23,6 +23,7 @@ export const useGameStore = defineStore('game', () => {
   const turnStartTime = ref<number | null>(null);
   const winner = ref<'player1' | 'player2' | null>(null);
   const winReason = ref<'three_in_row' | 'opponent_left' | null>(null);
+  const winningCells = ref<number[]>([]);
   const rematchVotes = ref<RematchVotes>({ player1: null, player2: null });
   const hasEmptySlot = ref(true);
   const myRole = ref<PlayerRole>('spectator');
@@ -95,6 +96,7 @@ export const useGameStore = defineStore('game', () => {
         phase.value = 'ended';
         winner.value = data.winner;
         winReason.value = data.reason;
+        winningCells.value = data.winningCells || [];
         pendingMove.value = false;
         break;
 
@@ -302,6 +304,7 @@ export const useGameStore = defineStore('game', () => {
     turnStartTime.value = null;
     winner.value = null;
     winReason.value = null;
+    winningCells.value = [];
     rematchVotes.value = { player1: null, player2: null };
     hasEmptySlot.value = true;
     myRole.value = 'spectator';
@@ -322,6 +325,7 @@ export const useGameStore = defineStore('game', () => {
     turnStartTime,
     winner,
     winReason,
+    winningCells,
     rematchVotes,
     hasEmptySlot,
     myRole,

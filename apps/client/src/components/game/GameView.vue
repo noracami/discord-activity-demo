@@ -51,6 +51,7 @@
       :player1="game.player1"
       :player2="game.player2"
       :isMyTurn="game.isMyTurn"
+      :winningCells="game.winningCells"
       @move="handleMove"
     />
 

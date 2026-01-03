@@ -69,11 +69,11 @@
         <!-- Lobby View (waiting/ready phase) -->
         <LobbyView v-if="game.phase === 'waiting' || game.phase === 'ready'" />
 
-        <!-- Game View (playing phase) -->
-        <GameView v-else-if="game.phase === 'playing'" />
+        <!-- Game View (playing phase or ended with winning animation) -->
+        <GameView v-else-if="game.phase === 'playing' || (game.phase === 'ended' && !showResultScreen)" />
 
-        <!-- Game Ended View -->
-        <GameResult v-else-if="game.phase === 'ended'" />
+        <!-- Game Ended View (after winning animation) -->
+        <GameResult v-else-if="game.phase === 'ended' && showResultScreen" />
       </main>
     </div>
 
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, computed, watch, ref } from 'vue';
 import { useDiscordStore, useNakamaStore, useGameStore } from '@/stores';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import LobbyView from '@/components/lobby/LobbyView.vue';
@@ -94,6 +94,10 @@ import { GameView, GameResult } from '@/components/game';
 const discord = useDiscordStore();
 const nakama = useNakamaStore();
 const game = useGameStore();
+
+// Delay showing game result when there's a winning animation
+const showResultScreen = ref(false);
+let resultTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const loadingMessage = computed(() => {
   if (discord.isLoading) return '連接 Discord 中...';
@@ -137,6 +141,33 @@ watch(
   () => {
     if (nakama.userId) {
       game.setMyRole(nakama.userId);
+    }
+  }
+);
+
+// Handle game end - delay showing result screen for winning animation
+watch(
+  () => game.phase,
+  (newPhase, oldPhase) => {
+    // Clear any pending timeout
+    if (resultTimeout) {
+      clearTimeout(resultTimeout);
+      resultTimeout = null;
+    }
+
+    if (newPhase === 'ended') {
+      // If there's a winning line (three_in_row), delay showing result
+      if (game.winReason === 'three_in_row' && game.winningCells.length > 0) {
+        showResultScreen.value = false;
+        resultTimeout = setTimeout(() => {
+          showResultScreen.value = true;
+        }, 3000); // 3 second delay
+      } else {
+        // For opponent_left or other reasons, show immediately
+        showResultScreen.value = true;
+      }
+    } else {
+      showResultScreen.value = false;
     }
   }
 );

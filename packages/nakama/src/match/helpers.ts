@@ -55,9 +55,9 @@ function isAboutToRemove(state: MatchState, piece: MatchPiece): boolean {
 }
 
 /**
- * Check for winner
+ * Check for winner - returns winner and winning cells
  */
-export function checkWinner(state: MatchState): 'player1' | 'player2' | null {
+export function checkWinner(state: MatchState): { winner: 'player1' | 'player2'; winningCells: number[] } | null {
   for (const pattern of WIN_PATTERNS) {
     const [a, b, c] = pattern;
     const pieceA = state.board[a];
@@ -71,7 +71,7 @@ export function checkWinner(state: MatchState): 'player1' | 'player2' | null {
       pieceA.owner === pieceB.owner &&
       pieceA.owner === pieceC.owner
     ) {
-      return pieceA.owner;
+      return { winner: pieceA.owner, winningCells: [a, b, c] };
     }
   }
 

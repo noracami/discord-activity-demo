@@ -3,6 +3,7 @@
     class="game-piece"
     :class="{
       'about-to-remove': isAboutToRemove,
+      'winning': isWinning,
       'symbol-o': symbol === 'O',
       'symbol-x': symbol === 'X',
     }"
@@ -24,6 +25,7 @@ const props = defineProps<{
   player: Player;
   symbol: 'O' | 'X';
   isAboutToRemove: boolean;
+  isWinning: boolean;
 }>();
 
 const symbolClass = computed(() => ({
@@ -103,5 +105,24 @@ const avatarUrl = computed(() => {
   transform: scale(0.7);
   opacity: 0.5;
   transition: transform 0.3s, opacity 0.3s;
+}
+
+/* Winning piece pulse effect */
+.winning {
+  animation: winning-pulse 0.8s ease-in-out infinite;
+}
+
+.winning .piece-avatar {
+  border-color: #3ba55c !important;
+  box-shadow: 0 0 15px rgba(59, 165, 92, 0.8);
+}
+
+@keyframes winning-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 </style>

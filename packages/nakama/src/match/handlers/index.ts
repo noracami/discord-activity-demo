@@ -376,21 +376,25 @@ export function handleMove(
   logger.info(`${sender.username} placed at ${cellIndex}${removedCellIndex !== null ? `, removed ${removedCellIndex}` : ''}`);
 
   // Check winner
-  const winner = checkWinner(state);
-  if (winner) {
-    state.winner = winner;
+  const winResult = checkWinner(state);
+  if (winResult) {
+    state.winner = winResult.winner;
     state.winReason = 'three_in_row';
     state.phase = 'ended';
 
     dispatcher.broadcastMessage(
       OpCode.GAME_END,
-      JSON.stringify({ winner, reason: 'three_in_row' }),
+      JSON.stringify({
+        winner: winResult.winner,
+        reason: 'three_in_row',
+        winningCells: winResult.winningCells,
+      }),
       null,
       null,
       true
     );
 
-    logger.info(`Game ended! Winner: ${winner}`);
+    logger.info(`Game ended! Winner: ${winResult.winner}, cells: ${winResult.winningCells}`);
     return state;
   }
 

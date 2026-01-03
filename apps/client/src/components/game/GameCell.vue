@@ -4,6 +4,7 @@
     :class="{
       clickable: isClickable,
       occupied: piece !== null,
+      winning: isWinningCell,
     }"
     @click="handleClick"
   >
@@ -12,6 +13,7 @@
       :player="player"
       :symbol="piece.owner === 'player1' ? 'O' : 'X'"
       :isAboutToRemove="isAboutToRemove"
+      :isWinning="isWinningCell"
     />
   </div>
 </template>
@@ -26,6 +28,7 @@ const props = defineProps<{
   player: Player | null;
   isClickable: boolean;
   isAboutToRemove: boolean;
+  isWinningCell: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -65,5 +68,21 @@ function handleClick() {
 
 .game-cell.occupied {
   cursor: default;
+}
+
+/* Winning cell glow effect */
+.game-cell.winning {
+  background-color: rgba(59, 165, 92, 0.3);
+  box-shadow: 0 0 20px rgba(59, 165, 92, 0.6), inset 0 0 10px rgba(59, 165, 92, 0.3);
+  animation: winning-glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes winning-glow {
+  from {
+    box-shadow: 0 0 15px rgba(59, 165, 92, 0.5), inset 0 0 8px rgba(59, 165, 92, 0.2);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(59, 165, 92, 0.8), inset 0 0 12px rgba(59, 165, 92, 0.4);
+  }
 }
 </style>
