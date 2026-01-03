@@ -1,5 +1,6 @@
 import { matchInit, matchJoinAttempt, matchJoin, matchLeave, matchLoop, matchTerminate, matchSignal } from './match/index';
 import { findOrCreateMatchRpc } from './rpc/find-or-create-match';
+import { storeLogRpc, queryLogsRpc, clearLogsRpc } from './rpc/remote-log';
 
 /**
  * Nakama server initialization
@@ -25,6 +26,9 @@ function InitModule(
 
   // Register RPCs
   initializer.registerRpc('find_or_create_match', findOrCreateMatchRpc);
+  initializer.registerRpc('store_log', storeLogRpc);
+  initializer.registerRpc('query_logs', queryLogsRpc);
+  initializer.registerRpc('clear_logs', clearLogsRpc);
 
   logger.info('Module initialized successfully');
 }

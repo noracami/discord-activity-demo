@@ -122,9 +122,9 @@ function handleJoinAsPlayer2() {
 
 function handleToggleReady() {
   if (game.myRole === 'player1' && game.player1Ready) {
-    nakama.sendMessage(4); // UNREADY opcode
+    nakama.unready();
   } else if (game.myRole === 'player2' && game.player2Ready) {
-    nakama.sendMessage(4); // UNREADY opcode
+    nakama.unready();
   } else {
     nakama.ready();
   }

@@ -11,6 +11,11 @@ import {
   leaveMatch,
   getNakamaSocket,
 } from '@/services/nakama.service';
+import {
+  enableRemoteLogging,
+  disableRemoteLogging,
+  setLogMatchId,
+} from '@/services/remote-logger.service';
 import { useGameStore } from './game.store';
 import { OpCode } from '@shared/types';
 
@@ -49,6 +54,10 @@ export const useNakamaStore = defineStore('nakama', () => {
 
       isConnected.value = true;
       console.log('Nakama fully connected, match:', mId);
+
+      // Enable remote logging
+      enableRemoteLogging(mId);
+      setLogMatchId(mId);
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Connection failed';
       console.error('Nakama connection failed:', err);
@@ -98,6 +107,9 @@ export const useNakamaStore = defineStore('nakama', () => {
   }
 
   async function disconnect() {
+    // Disable remote logging before disconnect
+    disableRemoteLogging();
+
     if (matchId.value) {
       await leaveMatch(matchId.value);
       matchId.value = null;
@@ -117,6 +129,10 @@ export const useNakamaStore = defineStore('nakama', () => {
 
   function ready() {
     sendMessage(OpCode.READY);
+  }
+
+  function unready() {
+    sendMessage(OpCode.UNREADY);
   }
 
   function move(cellIndex: number) {
@@ -146,6 +162,7 @@ export const useNakamaStore = defineStore('nakama', () => {
     joinGame,
     leaveGame,
     ready,
+    unready,
     move,
     kickPlayer,
     rematchVote,

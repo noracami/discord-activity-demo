@@ -191,6 +191,8 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
       continue;
     }
 
+    logger.debug(`matchLoop: opCode=${message.opCode}, sender=${sender.username}, data=${JSON.stringify(data)}`);
+
     switch (message.opCode) {
       case OpCode.JOIN_GAME:
         state = handleJoinGame(state, sender, dispatcher, logger);

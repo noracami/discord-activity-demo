@@ -221,6 +221,7 @@ export function handleReady(
   // Check if both ready
   if (state.player1Ready && state.player2Ready && state.player1 && state.player2) {
     // Reset board and game state for new game
+    logger.info(`handleReady: Both ready, resetting board. Old board: ${JSON.stringify(state.board)}`);
     state.board = Array(GAME_CONSTANTS.BOARD_SIZE).fill(null);
     state.player1Queue = [];
     state.player2Queue = [];
@@ -232,6 +233,8 @@ export function handleReady(
     state.phase = 'playing';
     state.currentTurn = Math.random() < 0.5 ? 'player1' : 'player2';
     state.turnStartTick = tick;
+
+    logger.info(`handleReady: Board after reset: ${JSON.stringify(state.board)}`);
 
     // Send GAME_START with full state to ensure client has correct board
     dispatcher.broadcastMessage(
@@ -307,12 +310,18 @@ export function handleMove(
 ): MatchState {
   const role = getPlayerRole(state, sender.sessionId);
 
+  // Debug log
+  logger.info(`handleMove: phase=${state.phase}, role=${role}, currentTurn=${state.currentTurn}, cellIndex=${data.cellIndex}`);
+  logger.info(`handleMove: board=${JSON.stringify(state.board)}`);
+
   // Validate
   if (state.phase !== 'playing') {
+    logger.warn(`handleMove: rejected - phase is ${state.phase}, not playing`);
     return state;
   }
 
   if (role !== state.currentTurn) {
+    logger.warn(`handleMove: rejected - role=${role}, currentTurn=${state.currentTurn}`);
     dispatcher.broadcastMessage(
       OpCode.ERROR,
       JSON.stringify({ code: 'NOT_YOUR_TURN', message: 'Not your turn' }),
@@ -325,6 +334,7 @@ export function handleMove(
 
   const { cellIndex } = data;
   if (cellIndex < 0 || cellIndex >= 9 || state.board[cellIndex] !== null) {
+    logger.warn(`handleMove: INVALID_MOVE - cellIndex=${cellIndex}, board[${cellIndex}]=${JSON.stringify(state.board[cellIndex])}`);
     dispatcher.broadcastMessage(
       OpCode.ERROR,
       JSON.stringify({ code: 'INVALID_MOVE', message: 'Invalid cell' }),
