@@ -94,18 +94,16 @@ const symbolClass = computed(() => ({
 
 const avatarUrl = computed(() => {
   if (!props.player) return '';
-  return props.player.avatarUrl || `https://cdn.discordapp.com/embed/avatars/${Math.abs(hashCode(props.player.odiscrdId)) % 5}.png`;
-});
-
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+  if (props.player.avatarUrl) return props.player.avatarUrl;
+  // Discord default avatar fallback using Discord ID
+  // Discord uses (user_id >> 22) % 6 for default avatar index
+  try {
+    const defaultIndex = Number(BigInt(props.player.odiscrdId) >> 22n) % 6;
+    return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
+  } catch {
+    return `https://cdn.discordapp.com/embed/avatars/0.png`;
   }
-  return hash;
-}
+});
 </script>
 
 <style scoped>

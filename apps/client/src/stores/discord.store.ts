@@ -6,6 +6,9 @@ import {
   authorizeDiscord,
   authenticateDiscord,
   getAvatarUrl,
+  getGuildMember,
+  getMemberAvatarUrl,
+  type GuildMember,
 } from '@/services/discord.service';
 
 export const useDiscordStore = defineStore('discord', () => {
@@ -18,15 +21,29 @@ export const useDiscordStore = defineStore('discord', () => {
   const accessToken = ref<string | null>(null);
   const error = ref<string | null>(null);
   const isLoading = ref(false);
+  const guildMember = ref<GuildMember | null>(null);
 
   // Getters
   const avatarUrl = computed(() => {
     if (!user.value) return null;
+    // Use server-specific avatar if available
+    if (guildId.value && guildMember.value) {
+      return getMemberAvatarUrl(
+        user.value.id,
+        guildId.value,
+        guildMember.value.avatar,
+        user.value.avatar
+      );
+    }
     return getAvatarUrl(user.value);
   });
 
   const displayName = computed(() => {
     if (!user.value) return null;
+    // Priority: Server nickname > Global name > Username
+    if (guildMember.value?.nick) {
+      return guildMember.value.nick;
+    }
     return user.value.global_name || user.value.username;
   });
 
@@ -53,8 +70,16 @@ export const useDiscordStore = defineStore('discord', () => {
       user.value = userInfo;
       isAuthenticated.value = true;
 
+      // Step 4: Get guild member info (nickname, server avatar)
+      if (gId) {
+        const memberInfo = await getGuildMember(token, gId);
+        guildMember.value = memberInfo;
+        console.log('Guild member info:', memberInfo);
+      }
+
       console.log('Discord initialized:', {
         user: userInfo.username,
+        nickname: guildMember.value?.nick,
         channelId: cId,
         guildId: gId,
       });
@@ -76,6 +101,7 @@ export const useDiscordStore = defineStore('discord', () => {
     accessToken,
     error,
     isLoading,
+    guildMember,
     // Getters
     avatarUrl,
     displayName,

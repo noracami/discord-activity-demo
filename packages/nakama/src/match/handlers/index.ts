@@ -8,6 +8,7 @@ import { buildStateSyncPayload, checkWinner, makeMove, resetForRematch } from '.
 export function handleJoinGame(
   state: MatchState,
   sender: nkruntime.Presence,
+  data: { avatarUrl?: string },
   dispatcher: nkruntime.MatchDispatcher,
   logger: nkruntime.Logger
 ): MatchState {
@@ -56,6 +57,7 @@ export function handleJoinGame(
     nakamaId: sender.userId,
     sessionId: sender.sessionId,
     username: sender.username,
+    avatarUrl: data.avatarUrl || '',
   };
 
   if (emptySlot === 'player1') {
@@ -72,6 +74,7 @@ export function handleJoinGame(
     JSON.stringify({
       odiscrdId: sender.userId,
       username: sender.username,
+      avatarUrl: data.avatarUrl || '',
       role: emptySlot,
     }),
     null,

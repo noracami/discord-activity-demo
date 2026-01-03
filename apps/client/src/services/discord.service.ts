@@ -48,7 +48,7 @@ export async function authorizeDiscord(): Promise<string> {
     response_type: 'code',
     state: '',
     prompt: 'none',
-    scope: ['identify', 'guilds'],
+    scope: ['identify', 'guilds', 'guilds.members.read'],
   });
 
   // Exchange code for access token via our server
@@ -86,7 +86,7 @@ export async function setupDiscordAuth(): Promise<{
     response_type: 'code',
     state: '',
     prompt: 'none',
-    scope: ['identify', 'guilds'],
+    scope: ['identify', 'guilds', 'guilds.members.read'],
   });
 
   // Exchange code for access token via our server
@@ -160,5 +160,61 @@ export function getAvatarUrl(user: DiscordUser, size: number = 128): string {
   }
   // Default avatar
   const defaultIndex = Number(BigInt(user.id) >> 22n) % 6;
+  return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
+}
+
+/**
+ * Guild member info from Discord API
+ */
+export interface GuildMember {
+  nick: string | null;
+  avatar: string | null;
+  roles: string[];
+  joined_at: string;
+}
+
+/**
+ * Get current user's guild member info (nickname, server avatar, etc.)
+ */
+export async function getGuildMember(accessToken: string, guildId: string): Promise<GuildMember | null> {
+  try {
+    const response = await fetch(`https://discord.com/api/v10/users/@me/guilds/${guildId}/member`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to get guild member info:', response.status);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching guild member:', error);
+    return null;
+  }
+}
+
+/**
+ * Get member avatar URL (server-specific avatar or fallback to user avatar)
+ */
+export function getMemberAvatarUrl(
+  userId: string,
+  guildId: string,
+  memberAvatar: string | null,
+  userAvatar: string | null,
+  size: number = 128
+): string {
+  // Server-specific avatar takes priority
+  if (memberAvatar) {
+    return `https://cdn.discordapp.com/guilds/${guildId}/users/${userId}/avatars/${memberAvatar}.png?size=${size}`;
+  }
+  // Fall back to user avatar
+  if (userAvatar) {
+    return `https://cdn.discordapp.com/avatars/${userId}/${userAvatar}.png?size=${size}`;
+  }
+  // Default avatar
+  const defaultIndex = Number(BigInt(userId) >> 22n) % 6;
   return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
 }

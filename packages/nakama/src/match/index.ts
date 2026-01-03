@@ -205,7 +205,7 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
 
     switch (message.opCode) {
       case OpCode.JOIN_GAME:
-        state = handleJoinGame(state, sender, dispatcher, logger);
+        state = handleJoinGame(state, sender, data, dispatcher, logger);
         break;
 
       case OpCode.LEAVE_GAME:

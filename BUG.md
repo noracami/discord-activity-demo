@@ -14,19 +14,42 @@
 
 ---
 
-### BUG-003: 大頭貼與 Server Nickname 未顯示
-- **狀態:** 🔴 Open
+## 已解決的問題
+
+### BUG-003: 大頭貼未顯示
+- **解決日期:** 2026-01-03
 - **優先級:** Medium
-- **描述:** 玩家的 Discord 大頭貼沒有正確顯示，使用預設 Discord logo；Server Nickname 也未顯示
-- **預期行為:** 應顯示玩家的 Discord 大頭貼和伺服器暱稱
-- **可能原因:**
-  - [ ] 大頭貼 URL 取得方式有問題
-  - [ ] 未請求正確的 OAuth2 scope
-  - [ ] 未使用 Discord SDK 取得伺服器成員資訊
+- **描述:** 玩家的 Discord 大頭貼沒有正確顯示，使用預設 Discord logo
+
+#### 根因分析
+1. 客戶端發送 `JOIN_GAME` 時沒有帶上 avatar URL
+2. Nakama `MatchPlayer` 沒有儲存 `avatarUrl`
+3. `PLAYER_JOINED` 廣播沒有包含 avatar 資訊
+4. `buildStateSyncPayload` 沒有包含 `avatarUrl`
+
+#### 解決方案
+1. **Nakama state.ts**: `MatchPlayer` 新增 `avatarUrl` 欄位
+2. **Nakama handlers**: `handleJoinGame` 接收並儲存 `avatarUrl`
+3. **Nakama helpers**: `buildPlayerPayload` 包含 `avatarUrl`
+4. **Client nakama.store**: `joinGame()` 傳送 `avatarUrl`
+5. **Client LobbyView**: 呼叫 `joinGame()` 時傳入 Discord avatar URL
+6. **Client game.store**: 使用伺服器回傳的 `avatarUrl`
+7. **PlayerSlot/GamePiece**: 修正 fallback 使用正確的 Discord 預設頭像計算 `(user_id >> 22) % 6`
+
+#### 相關檔案
+- `packages/nakama/src/match/state.ts`
+- `packages/nakama/src/match/handlers/index.ts`
+- `packages/nakama/src/match/helpers.ts`
+- `apps/client/src/stores/nakama.store.ts`
+- `apps/client/src/stores/game.store.ts`
+- `apps/client/src/components/lobby/LobbyView.vue`
+- `apps/client/src/components/lobby/PlayerSlot.vue`
+- `apps/client/src/components/game/GamePiece.vue`
+
+#### 備註
+Server Nickname 功能尚未實作，需要使用 Discord SDK `guilds.members.read` scope 並透過 API 取得成員資訊。
 
 ---
-
-## 已解決的問題
 
 ### BUG-001: Player 無法離座
 - **解決日期:** 2026-01-03
@@ -175,7 +198,7 @@ if (rawDataStr.length > 0) {
 |----|------|--------|------|
 | BUG-001 | Player 無法離座 | High | 🟢 Resolved |
 | BUG-002 | Rebuild 時活動會斷掉 | Medium | 🔴 Open |
-| BUG-003 | 大頭貼與 Nickname 未顯示 | Medium | 🔴 Open |
+| BUG-003 | 大頭貼未顯示 | Medium | 🟢 Resolved |
 | BUG-004 | 入座後仍顯示觀戰 | Low | 🟢 Resolved |
 | BUG-005 | 結束畫面按鈕無反應 | High | 🟢 Resolved |
 | BUG-006 | FIFO 移除時機不符合規則 | Medium | 🟢 Resolved |

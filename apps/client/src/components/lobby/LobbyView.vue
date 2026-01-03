@@ -63,11 +63,13 @@
 import { computed, ref } from 'vue';
 import { useGameStore } from '@/stores/game.store';
 import { useNakamaStore } from '@/stores/nakama.store';
+import { useDiscordStore } from '@/stores/discord.store';
 import PlayerSlot from './PlayerSlot.vue';
 import ReadyTimer from './ReadyTimer.vue';
 
 const game = useGameStore();
 const nakama = useNakamaStore();
+const discord = useDiscordStore();
 
 const readyTimeoutTriggered = ref(false);
 
@@ -113,11 +115,11 @@ const canKickPlayer2 = computed((): boolean => {
 });
 
 function handleJoinAsPlayer1() {
-  nakama.joinGame();
+  nakama.joinGame(discord.avatarUrl || undefined);
 }
 
 function handleJoinAsPlayer2() {
-  nakama.joinGame();
+  nakama.joinGame(discord.avatarUrl || undefined);
 }
 
 function handleToggleReady() {

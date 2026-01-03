@@ -137,7 +137,7 @@ export const useGameStore = defineStore('game', () => {
         odiscrdId: data.odiscrdId,
         nakamaId: data.odiscrdId,
         username: data.username,
-        avatarUrl: '',
+        avatarUrl: data.avatarUrl || '',
         symbol: 'O',
       };
     } else if (data.role === 'player2') {
@@ -145,7 +145,7 @@ export const useGameStore = defineStore('game', () => {
         odiscrdId: data.odiscrdId,
         nakamaId: data.odiscrdId,
         username: data.username,
-        avatarUrl: '',
+        avatarUrl: data.avatarUrl || '',
         symbol: 'X',
       };
     }

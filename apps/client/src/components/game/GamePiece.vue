@@ -35,20 +35,17 @@ const avatarUrl = computed(() => {
   if (props.player.avatarUrl) {
     return props.player.avatarUrl;
   }
-  // Discord default avatar fallback
-  const hash = hashCode(props.player.odiscrdId);
-  return `https://cdn.discordapp.com/embed/avatars/${Math.abs(hash) % 5}.png`;
-});
-
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+  // Discord default avatar fallback using Discord ID
+  // Discord uses (user_id >> 22) % 6 for default avatar index
+  const odiscrdId = props.player.odiscrdId;
+  try {
+    const defaultIndex = Number(BigInt(odiscrdId) >> 22n) % 6;
+    return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
+  } catch {
+    // Fallback if BigInt fails
+    return `https://cdn.discordapp.com/embed/avatars/0.png`;
   }
-  return hash;
-}
+});
 </script>
 
 <style scoped>

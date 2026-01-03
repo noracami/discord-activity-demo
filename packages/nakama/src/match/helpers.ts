@@ -32,6 +32,7 @@ function buildPlayerPayload(player: MatchPlayer, symbol: 'O' | 'X') {
     odiscrdId: player.odiscrdId,
     nakamaId: player.nakamaId,
     username: player.username,
+    avatarUrl: player.avatarUrl,
     symbol,
   };
 }

@@ -8,6 +8,7 @@ export interface MatchPlayer {
   nakamaId: string;
   sessionId: string;
   username: string;
+  avatarUrl: string;
 }
 
 /**
