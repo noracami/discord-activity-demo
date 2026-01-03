@@ -93,8 +93,10 @@ watch(
         discord.user.username,
         discord.channelId
       );
-      // Set my role after connection
-      game.setMyRole(discord.user.id);
+      // Set my role after connection using Nakama user ID
+      if (nakama.userId) {
+        game.setMyRole(nakama.userId);
+      }
     }
   }
 );
@@ -103,8 +105,8 @@ watch(
 watch(
   () => [game.player1, game.player2],
   () => {
-    if (discord.user) {
-      game.setMyRole(discord.user.id);
+    if (nakama.userId) {
+      game.setMyRole(nakama.userId);
     }
   }
 );

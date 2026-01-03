@@ -19,6 +19,7 @@ export const useNakamaStore = defineStore('nakama', () => {
   const isConnected = ref(false);
   const isConnecting = ref(false);
   const matchId = ref<string | null>(null);
+  const userId = ref<string | null>(null);
   const error = ref<string | null>(null);
 
   // Actions
@@ -30,7 +31,8 @@ export const useNakamaStore = defineStore('nakama', () => {
 
     try {
       // Authenticate
-      await authenticateNakama(odiscrdId, username);
+      const session = await authenticateNakama(odiscrdId, username);
+      userId.value = session.user_id ?? null;
 
       // Connect socket
       const socket = await connectSocket();
@@ -133,6 +135,7 @@ export const useNakamaStore = defineStore('nakama', () => {
     isConnected,
     isConnecting,
     matchId,
+    userId,
     error,
     // Actions
     connect,
