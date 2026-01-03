@@ -69,13 +69,24 @@ export const useNakamaStore = defineStore('nakama', () => {
 
       // Join match - if fails, clear registry and retry once
       try {
+        console.log('Attempting to join match:', mId);
         await joinMatch(mId);
+        console.log('Successfully joined match:', mId);
       } catch (joinErr) {
-        console.log('joinMatch failed, clearing registry and retrying...', joinErr);
-        await clearMatch(channelId);
-        mId = await findOrCreateMatch(channelId);
-        matchId.value = mId;
-        await joinMatch(mId);
+        console.log('joinMatch failed:', joinErr);
+        console.log('Clearing registry and retrying...');
+        try {
+          await clearMatch(channelId);
+          console.log('Registry cleared');
+          mId = await findOrCreateMatch(channelId);
+          console.log('Got new matchId:', mId);
+          matchId.value = mId;
+          await joinMatch(mId);
+          console.log('Successfully joined new match:', mId);
+        } catch (retryErr) {
+          console.error('Retry also failed:', retryErr);
+          throw retryErr;
+        }
       }
 
       isConnected.value = true;
@@ -156,13 +167,24 @@ export const useNakamaStore = defineStore('nakama', () => {
 
       // Join match - if fails, clear registry and retry once
       try {
+        console.log('Attempting to join match:', correctMatchId);
         await joinMatch(correctMatchId);
+        console.log('Successfully joined match:', correctMatchId);
       } catch (joinErr) {
-        console.log('joinMatch failed, clearing registry and retrying...', joinErr);
-        await clearMatch(connectionParams.channelId);
-        correctMatchId = await findOrCreateMatch(connectionParams.channelId);
-        matchId.value = correctMatchId;
-        await joinMatch(correctMatchId);
+        console.log('joinMatch failed:', joinErr);
+        console.log('Clearing registry and retrying...');
+        try {
+          await clearMatch(connectionParams.channelId);
+          console.log('Registry cleared');
+          correctMatchId = await findOrCreateMatch(connectionParams.channelId);
+          console.log('Got new matchId:', correctMatchId);
+          matchId.value = correctMatchId;
+          await joinMatch(correctMatchId);
+          console.log('Successfully joined new match:', correctMatchId);
+        } catch (retryErr) {
+          console.error('Retry also failed:', retryErr);
+          throw retryErr;
+        }
       }
 
       isConnected.value = true;
