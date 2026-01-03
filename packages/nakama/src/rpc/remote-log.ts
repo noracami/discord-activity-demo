@@ -97,36 +97,52 @@ export const queryLogsRpc: nkruntime.RpcFunction = function (
 ): string {
   let params: LogQueryParams = {};
 
+  logger.info(`queryLogsRpc: raw payload = ${payload}, type = ${typeof payload}`);
+
   try {
     if (payload) {
-      params = JSON.parse(payload);
+      // Handle case where payload might be double-encoded or already parsed
+      const parsed = JSON.parse(payload);
+      if (typeof parsed === 'string') {
+        // Double-encoded JSON string
+        params = JSON.parse(parsed);
+      } else {
+        params = parsed;
+      }
     }
   } catch (e) {
+    logger.warn(`queryLogsRpc: parse error = ${e}`);
     // Use default params
   }
+
+  logger.info(`queryLogsRpc: params = ${JSON.stringify(params)}`);
 
   const limit = Math.min(params.limit || 50, 100);
   let allLogs: LogEntry[] = [];
 
   // If 'all' flag is set (admin query via http_key), query all users
   if (params.all) {
-    // Query storage index to get all logs
-    // Using SQL query on storage
-    const query = `
-      SELECT value
-      FROM storage
-      WHERE collection = '${LOG_COLLECTION}'
-      ORDER BY create_time DESC
-      LIMIT ${limit}
-    `;
-
     try {
-      // Use storageIndexList if available, otherwise fallback
-      // For now, list from a known set of users or use system user
-      const systemLogs = nk.storageList(undefined, LOG_COLLECTION, limit, params.cursor);
-      allLogs = systemLogs.objects?.map((obj) => obj.value as LogEntry) || [];
+      // Use SQL query to get logs from all users
+      const queryResult = nk.sqlQuery(`
+        SELECT value FROM storage
+        WHERE collection = $1
+        ORDER BY create_time DESC
+        LIMIT $2
+      `, [LOG_COLLECTION, limit]);
+
+      allLogs = queryResult.map((row: any) => {
+        try {
+          return typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+        } catch {
+          return row.value;
+        }
+      });
+      logger.info(`queryLogsRpc: found ${allLogs.length} logs via SQL`);
     } catch (e) {
-      logger.warn(`Failed to query all logs: ${e}`);
+      logger.warn(`Failed to query all logs via SQL: ${e}`);
+      // Return empty result instead of failing
+      return JSON.stringify({ logs: [], count: 0, error: String(e) });
     }
   } else {
     // Query specific user's logs
