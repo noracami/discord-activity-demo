@@ -21,8 +21,8 @@
         <p class="result-reason">{{ resultReason }}</p>
       </div>
 
-      <!-- Rematch Section (only for players) -->
-      <div v-if="isPlayer" class="rematch-section">
+      <!-- Rematch Section (only for players when both present) -->
+      <div v-if="canRematch" class="rematch-section">
         <p class="rematch-title">再來一局?</p>
 
         <!-- Vote Buttons (if not voted yet) -->
@@ -46,6 +46,14 @@
             <span class="loading-dots">等待對手回應</span>
           </p>
         </div>
+      </div>
+
+      <!-- Opponent Left - Show leave button -->
+      <div v-else-if="isPlayer" class="opponent-left-section">
+        <p class="opponent-left-text">對手已離開</p>
+        <button class="btn-leave-seat" @click="leaveSeat">
+          離開座位
+        </button>
       </div>
 
       <!-- Spectator Notice -->
@@ -75,6 +83,11 @@ const nakama = useNakamaStore();
 
 // Computed properties
 const isPlayer = computed(() => game.myRole === 'player1' || game.myRole === 'player2');
+
+// Check if both players are still present for rematch
+const canRematch = computed(() => {
+  return isPlayer.value && game.player1 !== null && game.player2 !== null;
+});
 
 const isWinner = computed(() => {
   return game.winner === game.myRole;
@@ -158,7 +171,17 @@ const player2VoteText = computed(() => {
 });
 
 function vote(accept: boolean) {
-  nakama.rematchVote(accept);
+  try {
+    console.log('Rematch vote:', accept, 'myRole:', game.myRole, 'matchId:', nakama.matchId);
+    nakama.rematchVote(accept);
+    console.log('Vote sent successfully');
+  } catch (e) {
+    console.error('Vote failed:', e);
+  }
+}
+
+function leaveSeat() {
+  nakama.leaveGame();
 }
 
 function getDefaultAvatar(odiscrdId: string): string {
@@ -375,6 +398,38 @@ function hashCode(str: string): number {
   40% { content: '.'; }
   60% { content: '..'; }
   80%, 100% { content: '...'; }
+}
+
+/* Opponent Left Section */
+.opponent-left-section {
+  border-top: 1px solid #4f545c;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.opponent-left-text {
+  color: #72767d;
+  margin: 0;
+  font-size: 14px;
+}
+
+.btn-leave-seat {
+  background-color: #4f545c;
+  color: #dcddde;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-leave-seat:hover {
+  background-color: #5d6269;
 }
 
 /* Spectator Section */

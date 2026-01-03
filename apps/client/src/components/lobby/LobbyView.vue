@@ -16,6 +16,7 @@
         @join="handleJoinAsPlayer1"
         @toggleReady="handleToggleReady"
         @kick="handleKick('player1')"
+        @leave="handleLeave"
       />
 
       <div class="vs-divider">
@@ -33,6 +34,7 @@
         @join="handleJoinAsPlayer2"
         @toggleReady="handleToggleReady"
         @kick="handleKick('player2')"
+        @leave="handleLeave"
       />
     </div>
 
@@ -130,6 +132,10 @@ function handleToggleReady() {
 
 function handleKick(targetRole: 'player1' | 'player2') {
   nakama.kickPlayer(targetRole);
+}
+
+function handleLeave() {
+  nakama.leaveGame();
 }
 
 function handleReadyTimeout() {

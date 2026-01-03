@@ -1,5 +1,5 @@
 import { MatchState, getPlayerRole, hasEmptySlot, getEmptySlot } from '../state';
-import { OpCode } from '../constants';
+import { OpCode, GAME_CONSTANTS } from '../constants';
 import { buildStateSyncPayload, checkWinner, makeMove, resetForRematch } from '../helpers';
 
 /**
@@ -136,8 +136,28 @@ export function handleLeaveGame(
       null,
       true
     );
-  } else if (state.phase === 'ready') {
+  } else if (state.phase === 'ready' || state.phase === 'ended') {
+    // Reset game state when leaving from ready or ended phase
     state.phase = 'waiting';
+    state.board = Array(GAME_CONSTANTS.BOARD_SIZE).fill(null);
+    state.player1Queue = [];
+    state.player2Queue = [];
+    state.currentTurn = null;
+    state.winner = null;
+    state.winReason = null;
+    state.rematchVotes = { player1: null, player2: null };
+    state.player1Ready = false;
+    state.player2Ready = false;
+
+    // Send state sync to update all clients
+    const syncPayload = buildStateSyncPayload(state);
+    dispatcher.broadcastMessage(
+      OpCode.STATE_SYNC,
+      JSON.stringify(syncPayload),
+      null,
+      null,
+      true
+    );
   }
 
   dispatcher.broadcastMessage(
@@ -217,6 +237,49 @@ export function handleReady(
 
     logger.info(`Game started! First turn: ${state.currentTurn}`);
   }
+
+  return state;
+}
+
+/**
+ * Handle UNREADY
+ */
+export function handleUnready(
+  state: MatchState,
+  sender: nkruntime.Presence,
+  dispatcher: nkruntime.MatchDispatcher,
+  logger: nkruntime.Logger
+): MatchState {
+  const role = getPlayerRole(state, sender.sessionId);
+
+  if (role === 'spectator') {
+    return state;
+  }
+
+  // Can only unready in ready/waiting phase
+  if (state.phase !== 'ready' && state.phase !== 'waiting') {
+    return state;
+  }
+
+  // Set unready
+  if (role === 'player1') {
+    state.player1Ready = false;
+  } else {
+    state.player2Ready = false;
+  }
+
+  dispatcher.broadcastMessage(
+    OpCode.READY_UPDATE,
+    JSON.stringify({
+      player1Ready: state.player1Ready,
+      player2Ready: state.player2Ready,
+    }),
+    null,
+    null,
+    true
+  );
+
+  logger.info(`${sender.username} (${role}) cancelled ready`);
 
   return state;
 }

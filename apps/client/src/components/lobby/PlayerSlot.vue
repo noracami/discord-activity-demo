@@ -37,15 +37,22 @@
         <div v-if="isMe" class="my-badge">你</div>
       </div>
 
-      <!-- Ready/Unready Button for self -->
-      <button
-        v-if="isMe && !isGameStarted"
-        class="btn-ready"
-        :class="{ 'is-ready': isReady }"
-        @click="$emit('toggleReady')"
-      >
-        {{ isReady ? '取消準備' : '準備' }}
-      </button>
+      <!-- Buttons for self -->
+      <div v-if="isMe && !isGameStarted" class="self-buttons">
+        <button
+          class="btn-ready"
+          :class="{ 'is-ready': isReady }"
+          @click="$emit('toggleReady')"
+        >
+          {{ isReady ? '取消準備' : '準備' }}
+        </button>
+        <button
+          class="btn-leave"
+          @click="$emit('leave')"
+        >
+          離座
+        </button>
+      </div>
 
       <!-- Kick Button for opponent (when can kick) -->
       <button
@@ -77,6 +84,7 @@ defineEmits<{
   (e: 'join'): void;
   (e: 'toggleReady'): void;
   (e: 'kick'): void;
+  (e: 'leave'): void;
 }>();
 
 const symbolClass = computed(() => ({
@@ -250,17 +258,23 @@ function hashCode(str: string): number {
   border-radius: 4px;
 }
 
+.self-buttons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
 .btn-ready {
   background-color: #3ba55c;
   color: white;
   border: none;
-  padding: 10px 28px;
+  padding: 10px 16px;
   border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-  width: 100%;
+  flex: 1;
 }
 
 .btn-ready:hover {
@@ -272,6 +286,22 @@ function hashCode(str: string): number {
 }
 
 .btn-ready.is-ready:hover {
+  background-color: #5d6269;
+}
+
+.btn-leave {
+  background-color: #4f545c;
+  color: #dcddde;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-leave:hover {
   background-color: #5d6269;
 }
 

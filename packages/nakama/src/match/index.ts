@@ -1,7 +1,7 @@
 import { MatchState, createInitialState, getPlayerRole, hasEmptySlot } from './state';
 import { OpCode, GAME_CONSTANTS } from './constants';
 import { buildStateSyncPayload } from './helpers';
-import { handleJoinGame, handleLeaveGame, handleReady, handleMove, handleKickPlayer, handleRematchVote } from './handlers';
+import { handleJoinGame, handleLeaveGame, handleReady, handleUnready, handleMove, handleKickPlayer, handleRematchVote } from './handlers';
 
 /**
  * Match initialization
@@ -202,6 +202,10 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
 
       case OpCode.READY:
         state = handleReady(state, sender, tick, dispatcher, logger);
+        break;
+
+      case OpCode.UNREADY:
+        state = handleUnready(state, sender, dispatcher, logger);
         break;
 
       case OpCode.MOVE:

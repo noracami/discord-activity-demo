@@ -74,7 +74,7 @@ export const useNakamaStore = defineStore('nakama', () => {
         return;
       }
 
-      console.log('Match data received:', opCode, data);
+      console.log('Match data received: opCode=', opCode, 'data=', JSON.stringify(data));
       gameStore.handleServerMessage(opCode, data);
     };
 
@@ -93,6 +93,7 @@ export const useNakamaStore = defineStore('nakama', () => {
       console.error('No match to send message to');
       return;
     }
+    console.log('Sending message:', opCode, data, 'to match:', matchId.value);
     sendMatchMessage(matchId.value, opCode, data);
   }
 

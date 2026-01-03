@@ -97,6 +97,7 @@ export const useGameStore = defineStore('game', () => {
         break;
 
       case OpCode.REMATCH_UPDATE:
+        console.log('REMATCH_UPDATE received:', data);
         rematchVotes.value = data;
         break;
 
