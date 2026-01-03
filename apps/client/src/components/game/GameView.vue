@@ -32,6 +32,12 @@
       </div>
     </div>
 
+    <!-- Opponent Disconnected Warning -->
+    <div v-if="game.opponentDisconnected" class="disconnect-warning">
+      <span class="disconnect-icon">⚠️</span>
+      <span>對手已斷線，等待重新連線中...</span>
+    </div>
+
     <!-- Turn Timer -->
     <TurnTimer
       :duration="TURN_TIME_LIMIT"
@@ -233,5 +239,32 @@ function handleMove(cellIndex: number) {
 
 .spectator-icon {
   font-size: 18px;
+}
+
+/* Disconnect Warning */
+.disconnect-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: rgba(250, 168, 26, 0.15);
+  border: 1px solid #faa81a;
+  border-radius: 8px;
+  color: #faa81a;
+  font-size: 14px;
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.disconnect-icon {
+  font-size: 18px;
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 </style>

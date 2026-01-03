@@ -1,12 +1,21 @@
 <template>
   <div class="app">
+    <!-- Reconnecting Overlay -->
+    <div v-if="nakama.isReconnecting" class="reconnecting-overlay">
+      <div class="reconnecting-content">
+        <div class="reconnecting-spinner"></div>
+        <p class="reconnecting-text">重新連線中...</p>
+        <p class="reconnecting-attempts">嘗試 {{ nakama.reconnectAttempts }} / 5</p>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="discord.isLoading || nakama.isConnecting" class="center-container">
       <LoadingSpinner :message="loadingMessage" />
     </div>
 
     <!-- Error State / Landing Page -->
-    <div v-else-if="discord.error || nakama.error" class="center-container landing-container">
+    <div v-else-if="(discord.error || nakama.error) && !nakama.isReconnecting" class="center-container landing-container">
       <h1 class="landing-title">無盡圈圈叉叉</h1>
       <p class="landing-subtitle">Infinite Tic-Tac-Toe</p>
       <p class="landing-desc">一個 Discord Activity 遊戲，請在 Discord 語音頻道中開啟</p>
@@ -288,6 +297,55 @@ onMounted(() => {
   justify-content: center;
   padding: 20px;
   gap: 20px;
+}
+
+/* Reconnecting Overlay */
+.reconnecting-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.reconnecting-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.reconnecting-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #4f545c;
+  border-top-color: #5865f2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reconnecting-text {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.reconnecting-attempts {
+  color: #b9bbbe;
+  font-size: 14px;
+  margin: 0;
 }
 
 </style>

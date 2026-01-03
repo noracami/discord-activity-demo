@@ -6,6 +6,7 @@ export const GAME_CONSTANTS = {
   MAX_PIECES_PER_PLAYER: 3,
   TURN_TIME_LIMIT: 30,
   READY_TIME_LIMIT: 30,
+  RECONNECT_TIME_LIMIT: 30, // seconds to wait for reconnection
   TICK_RATE: 10,
 } as const;
 
@@ -48,5 +49,7 @@ export const OpCode = {
   GAME_END: 108,
   REMATCH_UPDATE: 109,
   PLAYER_KICKED: 110,
+  PLAYER_DISCONNECTED: 111,
+  PLAYER_RECONNECTED: 112,
   ERROR: 199,
 } as const;

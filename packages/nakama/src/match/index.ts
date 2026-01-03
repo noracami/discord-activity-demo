@@ -2,6 +2,10 @@ import { MatchState, createInitialState, getPlayerRole, hasEmptySlot } from './s
 import { OpCode, GAME_CONSTANTS } from './constants';
 import { buildStateSyncPayload } from './helpers';
 import { handleJoinGame, handleLeaveGame, handleReady, handleUnready, handleMove, handleKickPlayer, handleRematchVote } from './handlers';
+import { saveMatchState, loadMatchState, deleteMatchState, restoreMatchState } from './storage';
+
+// Save state every N ticks (e.g., every 5 seconds at 10 tick/s)
+const SAVE_INTERVAL_TICKS = 50;
 
 /**
  * Match initialization
@@ -15,7 +19,14 @@ export const matchInit: nkruntime.MatchInitFunction<MatchState> = function (
   const channelId = params['channel_id'] || 'unknown';
   logger.info(`Match init for channel: ${channelId}`);
 
-  const state = createInitialState(channelId);
+  let state = createInitialState(channelId);
+
+  // Try to restore from storage
+  const storedState = loadMatchState(nk, logger, channelId);
+  if (storedState) {
+    logger.info(`Restoring match state from storage for channel: ${channelId}`);
+    state = restoreMatchState(state, storedState, logger);
+  }
 
   return {
     state,
@@ -60,7 +71,26 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
     // Store presence for broadcasting
     state.presences[presence.sessionId] = presence;
 
-    // Send full state to new player
+    // Check if this is a reconnecting player
+    let reconnectedRole: 'player1' | 'player2' | null = null;
+
+    if (state.player1?.isDisconnected && state.player1.odiscrdId === presence.userId) {
+      // Player 1 reconnected
+      state.player1.isDisconnected = false;
+      state.player1.disconnectedAtTick = null;
+      state.player1.sessionId = presence.sessionId; // Update session ID
+      reconnectedRole = 'player1';
+      logger.info(`Player 1 (${presence.username}) reconnected!`);
+    } else if (state.player2?.isDisconnected && state.player2.odiscrdId === presence.userId) {
+      // Player 2 reconnected
+      state.player2.isDisconnected = false;
+      state.player2.disconnectedAtTick = null;
+      state.player2.sessionId = presence.sessionId; // Update session ID
+      reconnectedRole = 'player2';
+      logger.info(`Player 2 (${presence.username}) reconnected!`);
+    }
+
+    // Send full state to player
     const syncPayload = buildStateSyncPayload(state);
     dispatcher.broadcastMessage(
       OpCode.STATE_SYNC,
@@ -70,18 +100,32 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
       true
     );
 
-    // Notify others about new spectator
-    dispatcher.broadcastMessage(
-      OpCode.PLAYER_JOINED,
-      JSON.stringify({
-        odiscrdId: presence.userId,
-        username: presence.username,
-        role: 'spectator',
-      }),
-      null,
-      presence,
-      true
-    );
+    if (reconnectedRole) {
+      // Notify all about reconnection
+      dispatcher.broadcastMessage(
+        OpCode.PLAYER_RECONNECTED,
+        JSON.stringify({
+          role: reconnectedRole,
+          odiscrdId: presence.userId,
+        }),
+        null,
+        null,
+        true
+      );
+    } else {
+      // Notify others about new spectator
+      dispatcher.broadcastMessage(
+        OpCode.PLAYER_JOINED,
+        JSON.stringify({
+          odiscrdId: presence.userId,
+          username: presence.username,
+          role: 'spectator',
+        }),
+        null,
+        presence,
+        true
+      );
+    }
   }
 
   return { state };
@@ -108,26 +152,31 @@ export const matchLeave: nkruntime.MatchLeaveFunction<MatchState> = function (
     delete state.presences[presence.sessionId];
 
     if (role === 'player1' || role === 'player2') {
-      // Player left - opponent wins if game in progress
-      if (state.phase === 'playing') {
-        const winner = role === 'player1' ? 'player2' : 'player1';
-        state.winner = winner;
-        state.winReason = 'opponent_left';
-        state.phase = 'ended';
+      const player = role === 'player1' ? state.player1 : state.player2;
 
+      // If game is in progress, mark as disconnected and wait for reconnect
+      if (state.phase === 'playing' && player) {
+        player.isDisconnected = true;
+        player.disconnectedAtTick = tick;
+
+        logger.info(`${presence.username} disconnected during game, waiting for reconnect...`);
+
+        // Notify others about temporary disconnect
         dispatcher.broadcastMessage(
-          OpCode.GAME_END,
+          OpCode.PLAYER_DISCONNECTED,
           JSON.stringify({
-            winner,
-            reason: 'opponent_left',
+            role,
+            odiscrdId: presence.userId,
           }),
           null,
           null,
           true
         );
+
+        continue; // Don't remove player slot yet
       }
 
-      // Clear player slot
+      // Not in game or game not in progress - clear slot immediately
       if (role === 'player1') {
         state.player1 = null;
         state.player1Ready = false;
@@ -140,25 +189,27 @@ export const matchLeave: nkruntime.MatchLeaveFunction<MatchState> = function (
       if (state.phase === 'ready') {
         state.phase = 'waiting';
       }
-    }
 
-    // Notify others
-    dispatcher.broadcastMessage(
-      OpCode.PLAYER_LEFT,
-      JSON.stringify({
-        odiscrdId: presence.userId,
-        role,
-      }),
-      null,
-      null,
-      true
-    );
+      // Notify others
+      dispatcher.broadcastMessage(
+        OpCode.PLAYER_LEFT,
+        JSON.stringify({
+          odiscrdId: presence.userId,
+          role,
+        }),
+        null,
+        null,
+        true
+      );
+    }
   }
 
   // Close match if no one left
   const presenceCount = Object.keys(state.presences).length;
   if (presenceCount === 0) {
     logger.info('No players left, closing match');
+    // Clean up stored state since no one is left
+    deleteMatchState(nk, logger, state.channelId);
     return null;
   }
 
@@ -247,8 +298,74 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
     }
   }
 
+  // Check disconnect timeout
+  if (state.phase === 'playing') {
+    const reconnectTimeoutTicks = GAME_CONSTANTS.RECONNECT_TIME_LIMIT * GAME_CONSTANTS.TICK_RATE;
+
+    // Check player 1 disconnect timeout
+    if (state.player1?.isDisconnected && state.player1.disconnectedAtTick !== null) {
+      const elapsed = tick - state.player1.disconnectedAtTick;
+      if (elapsed >= reconnectTimeoutTicks) {
+        logger.info('Player 1 reconnect timeout - Player 2 wins');
+        state = handleDisconnectTimeout(state, 'player1', dispatcher, logger);
+      }
+    }
+
+    // Check player 2 disconnect timeout
+    if (state.player2?.isDisconnected && state.player2.disconnectedAtTick !== null) {
+      const elapsed = tick - state.player2.disconnectedAtTick;
+      if (elapsed >= reconnectTimeoutTicks) {
+        logger.info('Player 2 reconnect timeout - Player 1 wins');
+        state = handleDisconnectTimeout(state, 'player2', dispatcher, logger);
+      }
+    }
+  }
+
+  // Periodically save state to storage (every SAVE_INTERVAL_TICKS)
+  if (tick % SAVE_INTERVAL_TICKS === 0) {
+    saveMatchState(nk, logger, state);
+  }
+
   return { state };
 };
+
+/**
+ * Handle disconnect timeout - opponent wins
+ */
+function handleDisconnectTimeout(
+  state: MatchState,
+  disconnectedRole: 'player1' | 'player2',
+  dispatcher: nkruntime.MatchDispatcher,
+  logger: nkruntime.Logger
+): MatchState {
+  const winner = disconnectedRole === 'player1' ? 'player2' : 'player1';
+
+  state.winner = winner;
+  state.winReason = 'opponent_left';
+  state.phase = 'ended';
+
+  // Clear the disconnected player
+  if (disconnectedRole === 'player1') {
+    state.player1 = null;
+    state.player1Ready = false;
+  } else {
+    state.player2 = null;
+    state.player2Ready = false;
+  }
+
+  dispatcher.broadcastMessage(
+    OpCode.GAME_END,
+    JSON.stringify({
+      winner,
+      reason: 'opponent_left',
+    }),
+    null,
+    null,
+    true
+  );
+
+  return state;
+}
 
 /**
  * Handle turn timeout - auto place piece
@@ -304,6 +421,13 @@ export const matchTerminate: nkruntime.MatchTerminateFunction<MatchState> = func
   graceSeconds: number
 ) {
   logger.info(`Match terminating, grace period: ${graceSeconds}s`);
+
+  // Save state before termination (for recovery if server restarts)
+  if (state.phase === 'playing' || (state.player1 || state.player2)) {
+    logger.info('Saving match state before termination');
+    saveMatchState(nk, logger, state);
+  }
+
   return { state };
 };
 

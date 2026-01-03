@@ -23,5 +23,7 @@ export enum OpCode {
   GAME_END = 108,       // Game ended
   REMATCH_UPDATE = 109, // Rematch vote update
   PLAYER_KICKED = 110,  // A player was kicked
+  PLAYER_DISCONNECTED = 111, // A player temporarily disconnected
+  PLAYER_RECONNECTED = 112,  // A player reconnected
   ERROR = 199,          // Error message
 }

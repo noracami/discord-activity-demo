@@ -9,6 +9,8 @@ export interface MatchPlayer {
   sessionId: string;
   username: string;
   avatarUrl: string;
+  isDisconnected: boolean;
+  disconnectedAtTick: number | null;
 }
 
 /**

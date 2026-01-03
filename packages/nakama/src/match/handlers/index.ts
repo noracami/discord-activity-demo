@@ -58,6 +58,8 @@ export function handleJoinGame(
     sessionId: sender.sessionId,
     username: sender.username,
     avatarUrl: data.avatarUrl || '',
+    isDisconnected: false,
+    disconnectedAtTick: null,
   };
 
   if (emptySlot === 'player1') {

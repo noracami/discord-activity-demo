@@ -1,40 +1,44 @@
 # 功能需求
 
-## 規劃中
+## 已完成
 
 ### FEAT-003: 連線恢復機制
-- **狀態:** 📝 Planning
+- **狀態:** ✅ Completed
 - **優先級:** Medium
 - **相關 Bug:** BUG-002
+- **完成日期:** 2025-01-03
 
 #### 背景
 目前玩家斷線（網路問題或伺服器重啟）會直接判定對手獲勝，無法恢復連線。
 
-#### 實作範圍
+#### 實作內容
 
-**Phase 1 - Client 重連（最小可行）**
-- [ ] Client 斷線偵測 (`onclose`, `onerror`)
-- [ ] 自動重連邏輯（指數退避）
-- [ ] UI 顯示「重新連線中...」
-- [ ] Server 短暫保留 match state
+**Phase 1 - Client 重連**
+- [x] Client 斷線偵測 (`ondisconnect`)
+- [x] 自動重連邏輯（指數退避，最多 5 次）
+- [x] UI 顯示「重新連線中...」overlay
+- [x] 儲存連線參數供重連使用
 
 **Phase 2 - 斷線寬限期**
-- [ ] 玩家斷線後不立即判輸，等待 N 秒
-- [ ] 對手看到「等待玩家重連...」
-- [ ] 超時才判定勝負
+- [x] 玩家斷線後標記為 `isDisconnected`，等待 30 秒
+- [x] 對手看到「對手已斷線，等待重新連線中...」警告
+- [x] 重連時恢復玩家 session，繼續遊戲
+- [x] 超時才判定對手獲勝
 
 **Phase 3 - State 持久化**
-- [ ] Match state 存入 Nakama Storage
-- [ ] Server 重啟後可恢復進行中的對局
+- [x] Match state 每 5 秒存入 Nakama Storage
+- [x] Match 終止前儲存最終狀態
+- [x] Server 重啟後可從 Storage 恢復進行中的對局
+- [x] 狀態過期（1小時）自動清理
+
+#### 新增檔案
+- `packages/nakama/src/match/storage.ts` - Storage 助手函式
 
 #### 協定擴充
 ```typescript
 // 新增 OpCode
-RECONNECT_REQUEST   // Client → Server: 請求重連
-RECONNECT_SUCCESS   // Server → Client: 重連成功
-RECONNECT_FAILED    // Server → Client: 重連失敗
-PLAYER_DISCONNECTED // Server → All: 玩家暫時斷線
-PLAYER_RECONNECTED  // Server → All: 玩家已重連
+PLAYER_DISCONNECTED = 111  // Server → All: 玩家暫時斷線
+PLAYER_RECONNECTED = 112   // Server → All: 玩家已重連
 ```
 
 #### 資料結構變更
@@ -42,9 +46,13 @@ PLAYER_RECONNECTED  // Server → All: 玩家已重連
 interface MatchPlayer {
   // ... 現有欄位
   isDisconnected: boolean;
-  disconnectedAt: number | null;
+  disconnectedAtTick: number | null;
 }
 ```
+
+---
+
+## 規劃中
 
 ---
 
@@ -87,4 +95,4 @@ Zeabur Dashboard → Service → Settings → Watch Paths
 |----|------|--------|------|
 | FEAT-001 | 透過 curl 查詢伺服器端 log | Low | 📝 Planned |
 | FEAT-002 | 設定 Zeabur Watch Paths | Low | 📝 Planned |
-| FEAT-003 | 連線恢復機制 | Medium | 📝 Planning |
+| FEAT-003 | 連線恢復機制 | Medium | ✅ Completed |

@@ -27,6 +27,7 @@ export const useGameStore = defineStore('game', () => {
   const hasEmptySlot = ref(true);
   const myRole = ref<PlayerRole>('spectator');
   const pendingMove = ref(false); // Prevent rapid clicks
+  const opponentDisconnected = ref(false); // Track if opponent is temporarily disconnected
 
   // Getters
   const isMyTurn = computed(() => {
@@ -104,6 +105,14 @@ export const useGameStore = defineStore('game', () => {
 
       case OpCode.PLAYER_KICKED:
         handlePlayerKicked(data);
+        break;
+
+      case OpCode.PLAYER_DISCONNECTED:
+        handlePlayerDisconnected(data);
+        break;
+
+      case OpCode.PLAYER_RECONNECTED:
+        handlePlayerReconnected(data);
         break;
 
       case OpCode.ERROR:
@@ -230,6 +239,32 @@ export const useGameStore = defineStore('game', () => {
     phase.value = 'waiting';
   }
 
+  function handlePlayerDisconnected(data: any) {
+    const { role } = data;
+    console.log(`Player ${role} disconnected temporarily`);
+
+    // Check if it's opponent who disconnected
+    if (
+      (myRole.value === 'player1' && role === 'player2') ||
+      (myRole.value === 'player2' && role === 'player1')
+    ) {
+      opponentDisconnected.value = true;
+    }
+  }
+
+  function handlePlayerReconnected(data: any) {
+    const { role } = data;
+    console.log(`Player ${role} reconnected`);
+
+    // Check if it's opponent who reconnected
+    if (
+      (myRole.value === 'player1' && role === 'player2') ||
+      (myRole.value === 'player2' && role === 'player1')
+    ) {
+      opponentDisconnected.value = false;
+    }
+  }
+
   function setMyRole(odiscrdId: string) {
     if (player1.value?.odiscrdId === odiscrdId) {
       myRole.value = 'player1';
@@ -260,6 +295,7 @@ export const useGameStore = defineStore('game', () => {
     hasEmptySlot.value = true;
     myRole.value = 'spectator';
     pendingMove.value = false;
+    opponentDisconnected.value = false;
   }
 
   return {
@@ -278,6 +314,7 @@ export const useGameStore = defineStore('game', () => {
     rematchVotes,
     hasEmptySlot,
     myRole,
+    opponentDisconnected,
     // Getters
     isMyTurn,
     canJoin,

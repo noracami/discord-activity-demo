@@ -23,9 +23,23 @@ export const useNakamaStore = defineStore('nakama', () => {
   // State
   const isConnected = ref(false);
   const isConnecting = ref(false);
+  const isReconnecting = ref(false);
   const matchId = ref<string | null>(null);
   const userId = ref<string | null>(null);
   const error = ref<string | null>(null);
+
+  // Reconnection state
+  const reconnectAttempts = ref(0);
+  const maxReconnectAttempts = 5;
+  const baseReconnectDelay = 1000; // 1 second
+  let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Store connection params for reconnection
+  let connectionParams: {
+    discordId: string;
+    username: string;
+    channelId: string;
+  } | null = null;
 
   // Actions
   async function connect(odiscrdId: string, username: string, channelId: string) {
@@ -33,6 +47,9 @@ export const useNakamaStore = defineStore('nakama', () => {
 
     isConnecting.value = true;
     error.value = null;
+
+    // Store params for potential reconnection
+    connectionParams = { discordId: odiscrdId, username, channelId };
 
     try {
       // Authenticate
@@ -53,6 +70,8 @@ export const useNakamaStore = defineStore('nakama', () => {
       await joinMatch(mId);
 
       isConnected.value = true;
+      isReconnecting.value = false;
+      reconnectAttempts.value = 0;
       console.log('Nakama fully connected, match:', mId);
 
       // Enable remote logging
@@ -61,9 +80,78 @@ export const useNakamaStore = defineStore('nakama', () => {
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Connection failed';
       console.error('Nakama connection failed:', err);
+
+      // If reconnecting and failed, try again
+      if (isReconnecting.value) {
+        scheduleReconnect();
+      }
     } finally {
       isConnecting.value = false;
     }
+  }
+
+  /**
+   * Attempt to reconnect with exponential backoff
+   */
+  async function reconnect() {
+    if (!connectionParams || isConnecting.value || isConnected.value) return;
+
+    if (reconnectAttempts.value >= maxReconnectAttempts) {
+      console.log('Max reconnect attempts reached');
+      isReconnecting.value = false;
+      error.value = '無法重新連線，請重新整理頁面';
+      return;
+    }
+
+    isReconnecting.value = true;
+    reconnectAttempts.value++;
+
+    console.log(`Reconnect attempt ${reconnectAttempts.value}/${maxReconnectAttempts}`);
+
+    // Reset state for reconnection
+    isConnected.value = false;
+    error.value = null;
+
+    await connect(
+      connectionParams.discordId,
+      connectionParams.username,
+      connectionParams.channelId
+    );
+  }
+
+  /**
+   * Schedule a reconnection with exponential backoff
+   */
+  function scheduleReconnect() {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+    }
+
+    if (reconnectAttempts.value >= maxReconnectAttempts) {
+      isReconnecting.value = false;
+      error.value = '無法重新連線，請重新整理頁面';
+      return;
+    }
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+    const delay = baseReconnectDelay * Math.pow(2, reconnectAttempts.value);
+    console.log(`Scheduling reconnect in ${delay}ms`);
+
+    reconnectTimeout = setTimeout(() => {
+      reconnect();
+    }, delay);
+  }
+
+  /**
+   * Cancel any pending reconnection
+   */
+  function cancelReconnect() {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
+    }
+    isReconnecting.value = false;
+    reconnectAttempts.value = 0;
   }
 
   function setupSocketHandlers(socket: Socket) {
@@ -94,6 +182,12 @@ export const useNakamaStore = defineStore('nakama', () => {
     socket.ondisconnect = () => {
       console.log('Socket disconnected');
       isConnected.value = false;
+
+      // Attempt to reconnect if we have connection params and not intentionally disconnecting
+      if (connectionParams && !isReconnecting.value) {
+        console.log('Unexpected disconnect, attempting to reconnect...');
+        scheduleReconnect();
+      }
     };
   }
 
@@ -107,6 +201,10 @@ export const useNakamaStore = defineStore('nakama', () => {
   }
 
   async function disconnect() {
+    // Cancel any pending reconnection
+    cancelReconnect();
+    connectionParams = null;
+
     // Disable remote logging before disconnect
     disableRemoteLogging();
 
@@ -152,12 +250,16 @@ export const useNakamaStore = defineStore('nakama', () => {
     // State
     isConnected,
     isConnecting,
+    isReconnecting,
+    reconnectAttempts,
     matchId,
     userId,
     error,
     // Actions
     connect,
     disconnect,
+    reconnect,
+    cancelReconnect,
     sendMessage,
     // Game actions
     joinGame,
