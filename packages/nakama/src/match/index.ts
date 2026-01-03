@@ -365,16 +365,16 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
     saveMatchState(nk, logger, state);
   }
 
-  // Periodically broadcast version check (every VERSION_CHECK_INTERVAL_TICKS, skip tick 0)
-  if (tick > 0 && tick % VERSION_CHECK_INTERVAL_TICKS === 0) {
-    dispatcher.broadcastMessage(
-      OpCode.VERSION_CHECK,
-      JSON.stringify({ version: __CLIENT_VERSION__ }),
-      null,
-      null,
-      true
-    );
-  }
+  // VERSION_CHECK 暫時停用
+  // if (tick > 0 && tick % VERSION_CHECK_INTERVAL_TICKS === 0) {
+  //   dispatcher.broadcastMessage(
+  //     OpCode.VERSION_CHECK,
+  //     JSON.stringify({ version: __CLIENT_VERSION__ }),
+  //     null,
+  //     null,
+  //     true
+  //   );
+  // }
 
   return { state };
 };
