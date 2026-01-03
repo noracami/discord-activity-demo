@@ -101,17 +101,10 @@ function hashCode(str: string): number {
   background-color: #ed4245;
 }
 
-/* FIFO: About to remove blink effect */
+/* FIFO: About to remove - shrink and fade */
 .about-to-remove {
-  animation: blink 0.6s ease-in-out infinite;
-}
-
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  transform: scale(0.7);
+  opacity: 0.5;
+  transition: transform 0.3s, opacity 0.3s;
 }
 </style>
