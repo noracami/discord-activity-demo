@@ -47,7 +47,7 @@
 - `apps/client/src/components/game/GamePiece.vue`
 
 #### 備註
-Server Nickname 功能尚未實作，需要使用 Discord SDK `guilds.members.read` scope 並透過 API 取得成員資訊。
+Server Nickname 功能已實作，使用 `guilds.members.read` scope 透過 Discord API `/users/@me/guilds/{guildId}/member` 取得成員資訊，優先顯示伺服器暱稱與伺服器專屬頭像。
 
 ---
 
