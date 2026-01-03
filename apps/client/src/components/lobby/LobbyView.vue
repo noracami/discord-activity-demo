@@ -239,5 +239,9 @@ function handleReadyTimeout() {
   .vs-divider {
     transform: rotate(90deg);
   }
+
+  .vs-text {
+    transform: rotate(-90deg);
+  }
 }
 </style>

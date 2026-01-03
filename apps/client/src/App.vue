@@ -54,9 +54,14 @@
             {{ roleLabel }}
           </span>
         </div>
-        <div class="connection-status">
-          <span class="status-dot connected"></span>
-          <span>已連接</span>
+        <div class="header-right">
+          <span v-if="nakama.matchId" class="match-id">
+            {{ nakama.matchId.substring(0, 8) }}
+          </span>
+          <div class="connection-status">
+            <span class="status-dot connected"></span>
+            <span>已連接</span>
+          </div>
         </div>
       </header>
 
@@ -147,6 +152,8 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .center-container {
@@ -269,6 +276,21 @@ onMounted(() => {
 .role-badge.spectator {
   background-color: #4f545c;
   color: #b9bbbe;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.match-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: #72767d;
+  background-color: #202225;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .connection-status {
