@@ -66,7 +66,8 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
   presences: nkruntime.Presence[]
 ) {
   for (const presence of presences) {
-    logger.info(`Player joined: ${presence.username} (${presence.sessionId})`);
+    logger.info(`Player joined: ${presence.username} (${presence.sessionId}, odiscrdId: ${presence.userId})`);
+    logger.info(`Current state: phase=${state.phase}, player1=${state.player1?.odiscrdId || 'none'}(disconnected=${state.player1?.isDisconnected}), player2=${state.player2?.odiscrdId || 'none'}(disconnected=${state.player2?.isDisconnected})`);
 
     // Store presence for broadcasting
     state.presences[presence.sessionId] = presence;
@@ -90,17 +91,17 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
       logger.info(`Player 2 (${presence.username}) reconnected!`);
     }
 
-    // Send full state to player
-    const syncPayload = buildStateSyncPayload(state);
-    dispatcher.broadcastMessage(
-      OpCode.STATE_SYNC,
-      JSON.stringify(syncPayload),
-      [presence],
-      null,
-      true
-    );
-
     if (reconnectedRole) {
+      // Player reconnected - broadcast full state to ALL players to sync everyone
+      const syncPayload = buildStateSyncPayload(state);
+      dispatcher.broadcastMessage(
+        OpCode.STATE_SYNC,
+        JSON.stringify(syncPayload),
+        null, // Send to all
+        null,
+        true
+      );
+
       // Notify all about reconnection
       dispatcher.broadcastMessage(
         OpCode.PLAYER_RECONNECTED,
@@ -113,6 +114,15 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
         true
       );
     } else {
+      // New player (spectator) - only send state to them
+      const syncPayload = buildStateSyncPayload(state);
+      dispatcher.broadcastMessage(
+        OpCode.STATE_SYNC,
+        JSON.stringify(syncPayload),
+        [presence],
+        null,
+        true
+      );
       // Notify others about new spectator
       dispatcher.broadcastMessage(
         OpCode.PLAYER_JOINED,
@@ -204,13 +214,21 @@ export const matchLeave: nkruntime.MatchLeaveFunction<MatchState> = function (
     }
   }
 
-  // Close match if no one left
+  // Close match if no one left AND no disconnected players waiting to reconnect
   const presenceCount = Object.keys(state.presences).length;
-  if (presenceCount === 0) {
-    logger.info('No players left, closing match');
+  const hasDisconnectedPlayers =
+    (state.player1?.isDisconnected) ||
+    (state.player2?.isDisconnected);
+
+  if (presenceCount === 0 && !hasDisconnectedPlayers) {
+    logger.info('No players left and no disconnected players, closing match');
     // Clean up stored state since no one is left
     deleteMatchState(nk, logger, state.channelId);
     return null;
+  }
+
+  if (presenceCount === 0 && hasDisconnectedPlayers) {
+    logger.info('No presences but waiting for disconnected players to reconnect');
   }
 
   return { state };
