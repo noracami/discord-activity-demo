@@ -27,11 +27,11 @@
 
         <!-- Vote Buttons (if not voted yet) -->
         <div v-if="!hasVoted" class="rematch-buttons">
-          <button class="btn-accept" @click="vote(true)">
+          <button class="btn-accept" @click.stop="vote(true)">
             <span class="btn-icon">✓</span>
             同意
           </button>
-          <button class="btn-decline" @click="vote(false)">
+          <button class="btn-decline" @click.stop="vote(false)">
             <span class="btn-icon">✕</span>
             拒絕
           </button>
@@ -171,8 +171,14 @@ const player2VoteText = computed(() => {
 });
 
 function vote(accept: boolean) {
+  console.log('=== REMATCH VOTE CLICKED ===');
+  console.log('accept:', accept);
+  console.log('myRole:', game.myRole);
+  console.log('matchId:', nakama.matchId);
+  console.log('isConnected:', nakama.isConnected);
+  console.log('rematchVotes before:', JSON.stringify(game.rematchVotes));
+
   try {
-    console.log('Rematch vote:', accept, 'myRole:', game.myRole, 'matchId:', nakama.matchId);
     nakama.rematchVote(accept);
     console.log('Vote sent successfully');
   } catch (e) {

@@ -144,6 +144,7 @@ export const useNakamaStore = defineStore('nakama', () => {
   }
 
   function rematchVote(accept: boolean) {
+    console.log('nakama.rematchVote called with:', accept);
     sendMessage(OpCode.REMATCH_VOTE, { accept });
   }
 
