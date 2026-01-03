@@ -185,9 +185,14 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
     let data: any = {};
     const rawDataStr = message.data ? nk.binaryToString(message.data) : '';
 
+    // Debug: log string details
+    logger.info(`matchLoop[${msgIdx}]: rawDataStr.length=${rawDataStr.length}, firstChar=${rawDataStr.charCodeAt(0)}, lastChar=${rawDataStr.charCodeAt(rawDataStr.length - 1)}`);
+    logger.info(`matchLoop[${msgIdx}]: rawDataStr bytes=[${rawDataStr.split('').map(c => c.charCodeAt(0)).join(',')}]`);
+
     try {
       if (message.data && message.data.length > 0) {
         data = JSON.parse(rawDataStr);
+        logger.info(`matchLoop[${msgIdx}]: JSON.parse succeeded, result keys=${Object.keys(data)}, result=${JSON.stringify(data)}`);
       }
     } catch (e) {
       logger.error(`Failed to parse message data: ${e}`);
