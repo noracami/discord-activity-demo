@@ -484,7 +484,12 @@ export function handleRematchVote(
 ): MatchState {
   const role = getPlayerRole(state, sender.sessionId);
 
+  // Debug log - same pattern as handleMove
+  logger.info(`handleRematchVote: data type=${typeof data}, data=${JSON.stringify(data)}, keys=${Object.keys(data || {})}`);
+  logger.info(`handleRematchVote: data.accept=${data.accept}, role=${role}, phase=${state.phase}`);
+
   if (role === 'spectator' || state.phase !== 'ended') {
+    logger.warn(`handleRematchVote: rejected - role=${role}, phase=${state.phase}`);
     return state;
   }
 
