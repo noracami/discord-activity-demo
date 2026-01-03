@@ -2,18 +2,6 @@
 
 ## 開放中的問題
 
-### BUG-001: Player 無法離座
-- **狀態:** 🔴 Open
-- **優先級:** High
-- **描述:** 玩家入座後沒有離座功能，無法讓出位置給其他人
-- **預期行為:** 玩家應該可以點擊按鈕離開座位，變回觀戰者
-- **重現步驟:**
-  1. 進入 Activity
-  2. 點擊「加入」入座
-  3. 無法找到離座按鈕
-
----
-
 ### BUG-002: Rebuild 時活動會斷掉
 - **狀態:** 🔴 Open
 - **優先級:** Medium
@@ -38,38 +26,6 @@
 
 ---
 
-### BUG-004: 入座後仍顯示「你正在觀戰」
-- **狀態:** 🟢 Resolved
-- **優先級:** Low
-- **描述:** 玩家已入座為 Player 1，但畫面下方仍顯示「你正在觀戰」
-- **預期行為:** 入座後應顯示「你是 O」或「你是 X」，而非觀戰狀態
-- **相關檔案:** `apps/client/src/stores/game.store.ts`
-- **解決方案:** 使用 Nakama userId 而非 Discord ID 來判斷玩家角色
-
----
-
-### BUG-005: 結束畫面按鈕無反應
-- **狀態:** 🔴 Open
-- **優先級:** High
-- **描述:** 遊戲結束後，點擊「再來一局」或「離開」按鈕都沒有反應
-- **預期行為:**
-  - 「再來一局」應發送 REMATCH_VOTE
-  - 「離開」應讓玩家離開座位
-- **相關檔案:** `apps/client/src/components/game/GameResult.vue`
-
----
-
-### BUG-007: 取消準備按鈕無效
-- **狀態:** 🔴 Open
-- **優先級:** High
-- **描述:** 玩家按下「準備」後，點擊「取消準備」按鈕沒有反應
-- **預期行為:** 點擊後應發送 UNREADY (OpCode 4) 並取消準備狀態
-- **相關檔案:**
-  - `apps/client/src/components/lobby/LobbyView.vue`
-  - `packages/nakama/src/match/handlers/index.ts` (需確認是否有處理 UNREADY)
-
----
-
 ### BUG-006: FIFO 移除時機不符合規則
 - **狀態:** 🔴 Open
 - **優先級:** Medium
@@ -89,9 +45,33 @@
 
 ## 已解決的問題
 
+### BUG-001: Player 無法離座
+- **解決日期:** 2026-01-03
+- **解決方案:** 在 PlayerSlot 新增「離座」按鈕，呼叫 `nakama.leaveGame()`
+- **相關 commit:** `9c00dc9`
+
+---
+
 ### BUG-004: 入座後仍顯示「你正在觀戰」
 - **解決日期:** 2026-01-03
 - **解決方案:** 使用 Nakama userId 判斷角色，修正 `nakama.store.ts` 和 `App.vue`
+- **相關 commit:** `0718917`
+
+---
+
+### BUG-005: 結束畫面按鈕無反應
+- **解決日期:** 2026-01-03
+- **解決方案:**
+  - 當對手離開時，顯示「對手已離開」和「離開座位」按鈕
+  - 修正後端在 ended 階段離開時重置狀態
+- **相關 commit:** `9c00dc9`
+
+---
+
+### BUG-007: 取消準備按鈕無效
+- **解決日期:** 2026-01-03
+- **解決方案:** 在後端新增 `handleUnready` handler 處理 UNREADY (OpCode 4)
+- **相關 commit:** `9c00dc9`
 
 ---
 
@@ -99,10 +79,10 @@
 
 | ID | 標題 | 優先級 | 狀態 |
 |----|------|--------|------|
-| BUG-001 | Player 無法離座 | High | 🔴 Open |
+| BUG-001 | Player 無法離座 | High | 🟢 Resolved |
 | BUG-002 | Rebuild 時活動會斷掉 | Medium | 🔴 Open |
 | BUG-003 | 大頭貼與 Nickname 未顯示 | Medium | 🔴 Open |
 | BUG-004 | 入座後仍顯示觀戰 | Low | 🟢 Resolved |
-| BUG-005 | 結束畫面按鈕無反應 | High | 🔴 Open |
+| BUG-005 | 結束畫面按鈕無反應 | High | 🟢 Resolved |
 | BUG-006 | FIFO 移除時機不符合規則 | Medium | 🔴 Open |
-| BUG-007 | 取消準備按鈕無效 | High | 🔴 Open |
+| BUG-007 | 取消準備按鈕無效 | High | 🟢 Resolved |

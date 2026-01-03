@@ -73,9 +73,10 @@ export const useGameStore = defineStore('game', () => {
         phase.value = 'playing';
         currentTurn.value = data.firstTurn;
         turnStartTime.value = Date.now();
-        // Reset board to ensure clean state
-        board.value = Array(9).fill(null);
+        // Use board from server if provided, otherwise reset
+        board.value = data.board || Array(9).fill(null);
         pendingMove.value = false;
+        console.log('GAME_START: board synced, firstTurn:', data.firstTurn);
         break;
 
       case OpCode.MOVE_MADE:

@@ -233,10 +233,12 @@ export function handleReady(
     state.currentTurn = Math.random() < 0.5 ? 'player1' : 'player2';
     state.turnStartTick = tick;
 
+    // Send GAME_START with full state to ensure client has correct board
     dispatcher.broadcastMessage(
       OpCode.GAME_START,
       JSON.stringify({
         firstTurn: state.currentTurn,
+        board: state.board, // Include empty board to sync state
       }),
       null,
       null,
