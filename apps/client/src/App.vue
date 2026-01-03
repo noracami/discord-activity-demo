@@ -43,23 +43,7 @@
         <GameView v-else-if="game.phase === 'playing'" />
 
         <!-- Game Ended View -->
-        <div v-else-if="game.phase === 'ended'" class="game-ended">
-          <div class="result-card">
-            <h2 class="result-title">
-              {{ game.winner ? (game.winner === game.myRole ? '你贏了!' : '你輸了') : '遊戲結束' }}
-            </h2>
-            <p class="result-reason">
-              {{ game.winReason === 'three_in_row' ? '三連線獲勝' : '對手離開' }}
-            </p>
-            <div class="rematch-section">
-              <p>重賽?</p>
-              <div class="rematch-buttons">
-                <button class="btn-success" @click="nakama.rematchVote(true)">同意</button>
-                <button class="btn-danger" @click="nakama.rematchVote(false)">拒絕</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GameResult v-else-if="game.phase === 'ended'" />
       </main>
     </div>
 
@@ -75,7 +59,7 @@ import { onMounted, computed, watch } from 'vue';
 import { useDiscordStore, useNakamaStore, useGameStore } from '@/stores';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 import LobbyView from '@/components/lobby/LobbyView.vue';
-import { GameView } from '@/components/game';
+import { GameView, GameResult } from '@/components/game';
 
 const discord = useDiscordStore();
 const nakama = useNakamaStore();
@@ -245,79 +229,4 @@ onMounted(() => {
   gap: 20px;
 }
 
-/* Game Ended View */
-.game-ended {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.result-card {
-  background-color: #2f3136;
-  border-radius: 12px;
-  padding: 32px 48px;
-  text-align: center;
-}
-
-.result-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-  color: #ffffff;
-}
-
-.result-reason {
-  color: #b9bbbe;
-  margin: 0 0 24px 0;
-}
-
-.rematch-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.rematch-section p {
-  color: #dcddde;
-  font-weight: 500;
-  margin: 0;
-}
-
-.rematch-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-.btn-success {
-  background-color: #3ba55c;
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-success:hover {
-  background-color: #2d7d46;
-}
-
-.btn-danger {
-  background-color: #ed4245;
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-danger:hover {
-  background-color: #c73e41;
-}
 </style>
