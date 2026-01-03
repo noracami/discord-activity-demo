@@ -389,10 +389,25 @@ function handleDisconnectTimeout(
   logger: nkruntime.Logger
 ): MatchState {
   const winner = disconnectedRole === 'player1' ? 'player2' : 'player1';
+  const disconnectedPlayer = disconnectedRole === 'player1' ? state.player1 : state.player2;
 
   state.winner = winner;
   state.winReason = 'opponent_left';
   state.phase = 'ended';
+
+  // Notify clients about player leaving BEFORE clearing the slot
+  if (disconnectedPlayer) {
+    dispatcher.broadcastMessage(
+      OpCode.PLAYER_LEFT,
+      JSON.stringify({
+        odiscrdId: disconnectedPlayer.odiscrdId,
+        role: disconnectedRole,
+      }),
+      null,
+      null,
+      true
+    );
+  }
 
   // Clear the disconnected player
   if (disconnectedRole === 'player1') {
