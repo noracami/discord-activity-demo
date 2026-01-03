@@ -190,15 +190,10 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
     logger.info(`matchLoop[${msgIdx}]: rawDataStr bytes=[${rawDataStr.split('').map(c => c.charCodeAt(0)).join(',')}]`);
 
     try {
-      logger.info(`matchLoop[${msgIdx}]: BEFORE JSON.parse, message.data exists=${!!message.data}, length=${message.data?.length}`);
-      if (message.data && message.data.length > 0) {
-        logger.info(`matchLoop[${msgIdx}]: calling JSON.parse now...`);
-        const parsed = JSON.parse(rawDataStr);
-        logger.info(`matchLoop[${msgIdx}]: JSON.parse returned, typeof=${typeof parsed}`);
-        data = parsed;
-        logger.info(`matchLoop[${msgIdx}]: JSON.parse succeeded, result keys=${Object.keys(data)}, result=${JSON.stringify(data)}`);
-      } else {
-        logger.info(`matchLoop[${msgIdx}]: skipping JSON.parse - no data`);
+      // Use rawDataStr.length instead of message.data.length (which returns undefined in Nakama runtime)
+      if (rawDataStr.length > 0) {
+        data = JSON.parse(rawDataStr);
+        logger.info(`matchLoop[${msgIdx}]: JSON.parse succeeded, keys=${Object.keys(data)}, data=${JSON.stringify(data)}`);
       }
     } catch (e: any) {
       logger.error(`matchLoop[${msgIdx}]: JSON.parse FAILED: ${e?.message || e}`);
