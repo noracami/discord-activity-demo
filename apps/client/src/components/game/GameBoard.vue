@@ -8,7 +8,7 @@
       :player="getPlayerForPiece(cell)"
       :isClickable="canClickCell(index)"
       :isAboutToRemove="cell?.isAboutToRemove ?? false"
-      @click="handleCellClick"
+      @cellClick="handleCellClick"
     />
   </div>
 </template>

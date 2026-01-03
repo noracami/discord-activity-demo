@@ -26,6 +26,24 @@
 
 ---
 
+### BUG-008: 落子時 cellIndex 為 undefined
+- **狀態:** 🔴 Open
+- **優先級:** Critical
+- **描述:** 點擊棋盤落子時，伺服器收到的 cellIndex 是 undefined，導致 INVALID_MOVE 錯誤
+- **伺服器 log:**
+  ```
+  handleMove: cellIndex=undefined
+  handleMove: INVALID_MOVE - cellIndex=undefined, board[undefined]=undefined
+  ```
+- **可能原因:**
+  - [ ] GameBoard 元件沒有正確傳遞 cellIndex
+  - [ ] 點擊事件處理有問題
+- **相關檔案:**
+  - `apps/client/src/components/game/GameBoard.vue`
+  - `apps/client/src/stores/nakama.store.ts`
+
+---
+
 ### BUG-006: FIFO 移除時機不符合規則
 - **狀態:** 🔴 Open
 - **優先級:** Medium
@@ -75,6 +93,18 @@
 
 ---
 
+## 功能需求
+
+### FEAT-001: 透過 curl 查詢伺服器端 log
+- **狀態:** 📝 Planned
+- **描述:** 目前只能透過 Zeabur Dashboard 查看 Nakama 伺服器 log，希望能透過 curl/API 查詢
+- **目前狀態:** 已有 `query_logs` RPC 可查詢前端遠端 log
+- **需求:**
+  - [ ] 將伺服器端 `logger.info/warn/error` 也存入 Storage
+  - [ ] 或提供 API 代理 Zeabur/Nakama log 查詢
+
+---
+
 ## 問題分類
 
 | ID | 標題 | 優先級 | 狀態 |
@@ -86,3 +116,4 @@
 | BUG-005 | 結束畫面按鈕無反應 | High | 🟢 Resolved |
 | BUG-006 | FIFO 移除時機不符合規則 | Medium | 🔴 Open |
 | BUG-007 | 取消準備按鈕無效 | High | 🟢 Resolved |
+| BUG-008 | 落子時 cellIndex 為 undefined | Critical | 🔴 Open |

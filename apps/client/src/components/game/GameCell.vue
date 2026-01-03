@@ -29,12 +29,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'click', index: number): void;
+  (e: 'cellClick', index: number): void;
 }>();
 
 function handleClick() {
   if (props.isClickable) {
-    emit('click', props.index);
+    emit('cellClick', props.index);
   }
 }
 </script>
