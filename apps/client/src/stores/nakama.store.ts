@@ -92,6 +92,7 @@ export const useNakamaStore = defineStore('nakama', () => {
 
   /**
    * Attempt to reconnect with exponential backoff
+   * Strategy: try old matchId first, fallback to findOrCreateMatch
    */
   async function reconnect() {
     if (!connectionParams || isConnecting.value || isConnected.value) return;
@@ -108,6 +109,9 @@ export const useNakamaStore = defineStore('nakama', () => {
 
     console.log(`Reconnect attempt ${reconnectAttempts.value}/${maxReconnectAttempts}`);
 
+    // Save old matchId before cleanup
+    const oldMatchId = matchId.value;
+
     // Clean up old socket before reconnecting
     try {
       disconnectSocket();
@@ -117,14 +121,55 @@ export const useNakamaStore = defineStore('nakama', () => {
 
     // Reset state for reconnection
     isConnected.value = false;
-    matchId.value = null;
     error.value = null;
 
-    await connect(
-      connectionParams.discordId,
-      connectionParams.username,
-      connectionParams.channelId
-    );
+    try {
+      // Re-authenticate and connect socket
+      const session = await authenticateNakama(
+        connectionParams.discordId,
+        connectionParams.username
+      );
+      userId.value = session.user_id ?? null;
+
+      const socket = await connectSocket();
+      setupSocketHandlers(socket);
+
+      // Try to rejoin old match first (if server is still running)
+      if (oldMatchId) {
+        try {
+          console.log(`Trying to rejoin old match: ${oldMatchId}`);
+          await joinMatch(oldMatchId);
+          matchId.value = oldMatchId;
+          isConnected.value = true;
+          isReconnecting.value = false;
+          reconnectAttempts.value = 0;
+          console.log('Successfully rejoined old match:', oldMatchId);
+          enableRemoteLogging(oldMatchId);
+          setLogMatchId(oldMatchId);
+          return;
+        } catch (e) {
+          console.log('Failed to rejoin old match, will find/create:', e);
+        }
+      }
+
+      // Fallback: find or create match (handles server restart case)
+      const mId = await findOrCreateMatch(connectionParams.channelId);
+      matchId.value = mId;
+      await joinMatch(mId);
+
+      isConnected.value = true;
+      isReconnecting.value = false;
+      reconnectAttempts.value = 0;
+      console.log('Nakama reconnected to match:', mId);
+
+      enableRemoteLogging(mId);
+      setLogMatchId(mId);
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Reconnection failed';
+      console.error('Nakama reconnection failed:', err);
+      matchId.value = null;
+      scheduleReconnect();
+    }
   }
 
   /**
