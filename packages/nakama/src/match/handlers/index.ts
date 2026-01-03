@@ -220,6 +220,14 @@ export function handleReady(
 
   // Check if both ready
   if (state.player1Ready && state.player2Ready && state.player1 && state.player2) {
+    // Reset board and game state for new game
+    state.board = Array(GAME_CONSTANTS.BOARD_SIZE).fill(null);
+    state.player1Queue = [];
+    state.player2Queue = [];
+    state.winner = null;
+    state.winReason = null;
+    state.rematchVotes = { player1: null, player2: null };
+
     // Start game
     state.phase = 'playing';
     state.currentTurn = Math.random() < 0.5 ? 'player1' : 'player2';
