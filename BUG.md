@@ -105,6 +105,19 @@
 
 ---
 
+### FEAT-002: 設定 Zeabur Watch Paths 優化部署
+- **狀態:** 📝 Planned
+- **描述:** 目前任何檔案變動都會觸發所有服務重新部署，應設定 Watch Paths 讓各服務只在相關資料夾變動時才部署
+- **設定方式:** Zeabur Dashboard → Service → Settings → Watch Paths
+- **建議設定:**
+  | 服務 | Watch Paths |
+  |------|-------------|
+  | Client | `apps/client/**`, `packages/shared/**` |
+  | Nakama | `packages/nakama/**`, `packages/shared/**` |
+- **參考文件:** [Watch Paths - Zeabur](https://zeabur.com/docs/en-US/deploy/watch-paths)
+
+---
+
 ## 問題分類
 
 | ID | 標題 | 優先級 | 狀態 |
