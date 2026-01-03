@@ -117,9 +117,10 @@ export const useGameStore = defineStore('game', () => {
         handlePlayerReconnected(data);
         break;
 
-      case OpCode.VERSION_CHECK:
-        handleVersionCheck(data);
-        break;
+      // VERSION_CHECK 暫時停用，後端照送但前端不處理
+      // case OpCode.VERSION_CHECK:
+      //   handleVersionCheck(data);
+      //   break;
 
       case OpCode.ERROR:
         console.error('Game error:', data.code, data.message);
@@ -166,6 +167,7 @@ export const useGameStore = defineStore('game', () => {
 
     winner.value = data.winner;
     winReason.value = data.winReason;
+    winningCells.value = data.winningCells || [];
     rematchVotes.value = data.rematchVotes;
     hasEmptySlot.value = data.hasEmptySlot;
     opponentDisconnected.value = false; // Reset on full sync
