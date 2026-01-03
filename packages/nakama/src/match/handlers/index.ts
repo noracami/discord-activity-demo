@@ -310,7 +310,9 @@ export function handleMove(
 ): MatchState {
   const role = getPlayerRole(state, sender.sessionId);
 
-  // Debug log
+  // Debug log - check what data actually is
+  logger.info(`handleMove: data type=${typeof data}, data=${JSON.stringify(data)}, keys=${Object.keys(data || {})}`);
+  logger.info(`handleMove: data.cellIndex=${data.cellIndex}, data["cellIndex"]=${data["cellIndex"]}`);
   logger.info(`handleMove: phase=${state.phase}, role=${role}, currentTurn=${state.currentTurn}, cellIndex=${data.cellIndex}`);
   logger.info(`handleMove: board=${JSON.stringify(state.board)}`);
 

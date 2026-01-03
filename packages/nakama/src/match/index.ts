@@ -178,20 +178,24 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
   messages: nkruntime.MatchMessage[]
 ) {
   // Process all messages
+  let msgIdx = 0;
   for (const message of messages) {
+    msgIdx++;
     const sender = message.sender;
     let data: any = {};
+    const rawDataStr = message.data ? nk.binaryToString(message.data) : '';
 
     try {
       if (message.data && message.data.length > 0) {
-        data = JSON.parse(nk.binaryToString(message.data));
+        data = JSON.parse(rawDataStr);
       }
     } catch (e) {
       logger.error(`Failed to parse message data: ${e}`);
       continue;
     }
 
-    logger.debug(`matchLoop: opCode=${message.opCode}, sender=${sender.username}, data=${JSON.stringify(data)}`);
+    logger.info(`matchLoop[${msgIdx}/${messages.length}]: opCode=${message.opCode}, sender=${sender.username}`);
+    logger.info(`matchLoop[${msgIdx}]: rawData="${rawDataStr}", parsed=${JSON.stringify(data)}, parsedType=${typeof data}`);
 
     switch (message.opCode) {
       case OpCode.JOIN_GAME:
@@ -211,6 +215,7 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
         break;
 
       case OpCode.MOVE:
+        logger.info(`matchLoop[${msgIdx}]: calling handleMove with data=${JSON.stringify(data)}, data.cellIndex=${data.cellIndex}`);
         state = handleMove(state, sender, data, tick, dispatcher, logger);
         break;
 
