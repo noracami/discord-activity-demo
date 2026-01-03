@@ -1,5 +1,5 @@
 import { matchInit, matchJoinAttempt, matchJoin, matchLeave, matchLoop, matchTerminate, matchSignal } from './match/index';
-import { findOrCreateMatchRpc } from './rpc/find-or-create-match';
+import { findOrCreateMatchRpc, clearMatchRpc } from './rpc/find-or-create-match';
 import { storeLogRpc, queryLogsRpc, clearLogsRpc } from './rpc/remote-log';
 
 /**
@@ -26,6 +26,7 @@ function InitModule(
 
   // Register RPCs
   initializer.registerRpc('find_or_create_match', findOrCreateMatchRpc);
+  initializer.registerRpc('clear_match', clearMatchRpc);
   initializer.registerRpc('store_log', storeLogRpc);
   initializer.registerRpc('query_logs', queryLogsRpc);
   initializer.registerRpc('clear_logs', clearLogsRpc);

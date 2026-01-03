@@ -6,6 +6,7 @@ import {
   connectSocket,
   disconnectSocket,
   findOrCreateMatch,
+  clearMatch,
   joinMatch,
   sendMatchMessage,
   leaveMatch,
@@ -291,6 +292,50 @@ export const useNakamaStore = defineStore('nakama', () => {
     sendMessage(OpCode.REMATCH_VOTE, { accept });
   }
 
+  /**
+   * Clear match registry and reconnect
+   * Used when stuck in wrong/stale match
+   */
+  async function clearAndReconnect() {
+    if (!connectionParams) {
+      console.error('No connection params, cannot clear and reconnect');
+      return;
+    }
+
+    console.log('Clearing match registry and reconnecting...');
+
+    try {
+      // Clear the registry
+      await clearMatch(connectionParams.channelId);
+      console.log('Match registry cleared');
+
+      // Leave current match if any
+      if (matchId.value) {
+        try {
+          await leaveMatch(matchId.value);
+        } catch (e) {
+          console.log('Failed to leave match:', e);
+        }
+        matchId.value = null;
+      }
+
+      // Reconnect
+      const gameStore = useGameStore();
+      gameStore.resetState();
+
+      const mId = await findOrCreateMatch(connectionParams.channelId);
+      matchId.value = mId;
+      await joinMatch(mId);
+
+      console.log('Reconnected to new match:', mId);
+      enableRemoteLogging(mId);
+      setLogMatchId(mId);
+    } catch (err) {
+      console.error('Failed to clear and reconnect:', err);
+      error.value = err instanceof Error ? err.message : 'Failed to clear and reconnect';
+    }
+  }
+
   return {
     // State
     isConnected,
@@ -305,6 +350,7 @@ export const useNakamaStore = defineStore('nakama', () => {
     disconnect,
     reconnect,
     cancelReconnect,
+    clearAndReconnect,
     sendMessage,
     // Game actions
     joinGame,

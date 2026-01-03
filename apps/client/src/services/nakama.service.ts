@@ -163,6 +163,23 @@ export async function findOrCreateMatch(channelId: string): Promise<string> {
 }
 
 /**
+ * Clear match registry for a channel
+ * Used when stuck in wrong/stale match
+ */
+export async function clearMatch(channelId: string): Promise<boolean> {
+  if (!socket) {
+    throw new Error('Socket not connected');
+  }
+
+  const response = await socket.rpc('clear_match', JSON.stringify({
+    channel_id: channelId,
+  }));
+
+  const data = JSON.parse(response.payload || '{}');
+  return data.success === true;
+}
+
+/**
  * Join a match
  */
 export async function joinMatch(matchId: string): Promise<void> {

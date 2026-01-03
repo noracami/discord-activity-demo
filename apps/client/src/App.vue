@@ -55,9 +55,12 @@
           </span>
         </div>
         <div class="header-right">
-          <span v-if="nakama.matchId" class="match-id">
-            {{ nakama.matchId.substring(0, 8) }}
-          </span>
+          <div v-if="nakama.matchId" class="match-info">
+            <span class="match-id">{{ nakama.matchId.substring(0, 8) }}</span>
+            <button class="btn-clear" @click="handleClearMatch" title="清除 Match（如果與其他人不同步）">
+              ✕
+            </button>
+          </div>
           <div class="connection-status">
             <span class="status-dot connected"></span>
             <span>已連接</span>
@@ -115,6 +118,12 @@ const roleLabel = computed(() => {
 
 async function initialize() {
   await discord.initialize();
+}
+
+async function handleClearMatch() {
+  if (confirm('確定要清除 Match 嗎？這會讓你重新連接到新的 Match。')) {
+    await nakama.clearAndReconnect();
+  }
 }
 
 // Watch for Discord auth completion to connect Nakama
@@ -315,6 +324,12 @@ onMounted(() => {
   gap: 12px;
 }
 
+.match-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .match-id {
   font-family: monospace;
   font-size: 11px;
@@ -322,6 +337,22 @@ onMounted(() => {
   background-color: #202225;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.btn-clear {
+  background: none;
+  border: none;
+  color: #72767d;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-clear:hover {
+  background-color: #ed4245;
+  color: white;
 }
 
 .connection-status {
