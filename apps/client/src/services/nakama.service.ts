@@ -176,13 +176,17 @@ export async function joinMatch(matchId: string): Promise<void> {
 
 /**
  * Send match data
+ * Uses TextEncoder to handle Unicode characters (e.g., Chinese nicknames)
  */
 export function sendMatchMessage(matchId: string, opCode: number, data: object): void {
   if (!socket) {
     throw new Error('Socket not connected');
   }
 
-  socket.sendMatchState(matchId, opCode, JSON.stringify(data));
+  // Encode as UTF-8 bytes to avoid btoa Unicode issues
+  const encoder = new TextEncoder();
+  const payload = encoder.encode(JSON.stringify(data));
+  socket.sendMatchState(matchId, opCode, payload);
 }
 
 /**
