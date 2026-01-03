@@ -1,13 +1,15 @@
 const MATCH_REGISTRY_COLLECTION = 'match_registry';
 const SYSTEM_USER = '00000000-0000-0000-0000-000000000000';
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 100;
 
 /**
  * RPC to find or create a match for a Discord channel
  *
- * Uses optimistic locking with Storage version to prevent race conditions:
- * - version: "*" = only write if key doesn't exist
- * - If write fails, another player created the match first, use theirs
+ * Strategy: Only ONE player creates the match, others wait and read
+ * 1. Try to claim the channelId by writing a "pending" state
+ * 2. Winner creates match and updates registry with matchId
+ * 3. Others wait for registry to have matchId, then return it
  */
 export const findOrCreateMatchRpc: nkruntime.RpcFunction = function (
   ctx: nkruntime.Context,
@@ -33,7 +35,7 @@ export const findOrCreateMatchRpc: nkruntime.RpcFunction = function (
   const registryKey = `channel_${channelId}`;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    // Step 1: Check if registry exists
+    // Step 1: Read current registry
     const existingRegistry = nk.storageRead([{
       collection: MATCH_REGISTRY_COLLECTION,
       key: registryKey,
@@ -41,90 +43,122 @@ export const findOrCreateMatchRpc: nkruntime.RpcFunction = function (
     }]);
 
     if (existingRegistry.length > 0) {
-      const registeredMatchId = existingRegistry[0].value.matchId as string;
-      const registryVersion = existingRegistry[0].version;
-      logger.info(`Found registered match: ${registeredMatchId}, version: ${registryVersion}`);
+      const registry = existingRegistry[0].value as {
+        matchId?: string;
+        status: 'pending' | 'ready';
+        channelId: string;
+        createdAt: number;
+      };
+      const version = existingRegistry[0].version;
 
-      // Verify match still exists
-      const query = `+label.channel_id:${channelId}`;
-      const matches = nk.matchList(10, true, null, null, 10, query);
-      const matchExists = matches.some(m => m.matchId === registeredMatchId);
+      // If registry has matchId and status is ready, verify and return
+      if (registry.status === 'ready' && registry.matchId) {
+        // Verify match exists
+        const query = `+label.channel_id:${channelId}`;
+        const matches = nk.matchList(10, true, null, null, 10, query);
+        const matchExists = matches.some(m => m.matchId === registry.matchId);
 
-      if (matchExists) {
-        logger.info(`Match ${registeredMatchId} exists, returning it`);
-        return JSON.stringify({ match_id: registeredMatchId });
-      }
+        if (matchExists) {
+          logger.info(`Found existing match: ${registry.matchId}`);
+          return JSON.stringify({ match_id: registry.matchId });
+        }
 
-      // Match doesn't exist, delete stale registry with version check
-      logger.info(`Match ${registeredMatchId} no longer exists, deleting stale registry`);
-      try {
-        nk.storageDelete([{
-          collection: MATCH_REGISTRY_COLLECTION,
-          key: registryKey,
-          userId: SYSTEM_USER,
-          version: registryVersion,
-        }]);
-      } catch (e) {
-        // Someone else already deleted/updated it, retry
-        logger.info(`Failed to delete stale registry, retrying...`);
+        // Match doesn't exist (server restarted), try to delete and recreate
+        logger.info(`Match ${registry.matchId} no longer exists, attempting to recreate`);
+        try {
+          nk.storageDelete([{
+            collection: MATCH_REGISTRY_COLLECTION,
+            key: registryKey,
+            userId: SYSTEM_USER,
+            version: version,
+          }]);
+        } catch (e) {
+          // Someone else deleted it, retry
+          logger.info(`Failed to delete stale registry, retrying...`);
+          continue;
+        }
+        // Continue to create new match
+      } else if (registry.status === 'pending') {
+        // Someone else is creating the match, wait and retry
+        logger.info(`Match creation in progress, waiting...`);
+        busyWait(RETRY_DELAY_MS);
         continue;
       }
     }
 
-    // Step 2: Create new match
-    const matchId = nk.matchCreate('infinite_tictactoe', { channel_id: channelId });
-    logger.info(`Created new match: ${matchId}`);
-
-    // Step 3: Try to register with version "*" (only if doesn't exist)
+    // Step 2: Try to claim the channelId by writing "pending" state
     try {
       nk.storageWrite([{
         collection: MATCH_REGISTRY_COLLECTION,
         key: registryKey,
         userId: SYSTEM_USER,
         value: {
+          status: 'pending',
+          channelId: channelId,
+          createdAt: Date.now(),
+        },
+        permissionRead: 0,
+        permissionWrite: 0,
+        version: '*', // Only write if doesn't exist
+      }]);
+      logger.info(`Claimed channelId, creating match...`);
+    } catch (e) {
+      // Someone else claimed it, wait and retry
+      logger.info(`Failed to claim channelId (another player was faster), retrying...`);
+      busyWait(RETRY_DELAY_MS);
+      continue;
+    }
+
+    // Step 3: We won the claim, create the match
+    const matchId = nk.matchCreate('infinite_tictactoe', { channel_id: channelId });
+    logger.info(`Created match: ${matchId}`);
+
+    // Step 4: Update registry with matchId and "ready" status
+    try {
+      // Read current version
+      const currentRegistry = nk.storageRead([{
+        collection: MATCH_REGISTRY_COLLECTION,
+        key: registryKey,
+        userId: SYSTEM_USER,
+      }]);
+
+      if (currentRegistry.length === 0) {
+        // Registry disappeared? This shouldn't happen
+        logger.error(`Registry disappeared after creating match!`);
+        throw new Error('Registry disappeared');
+      }
+
+      nk.storageWrite([{
+        collection: MATCH_REGISTRY_COLLECTION,
+        key: registryKey,
+        userId: SYSTEM_USER,
+        value: {
+          status: 'ready',
           matchId: matchId,
           channelId: channelId,
           createdAt: Date.now(),
         },
         permissionRead: 0,
         permissionWrite: 0,
-        version: '*', // Only write if key doesn't exist
+        version: currentRegistry[0].version,
       }]);
 
-      logger.info(`Successfully registered match: ${matchId}`);
+      logger.info(`Registered match: ${matchId}`);
       return JSON.stringify({ match_id: matchId });
     } catch (e) {
-      // Another player registered first, read and use theirs
-      logger.info(`Registry write failed (another player was faster), reading existing...`);
-
-      const confirmedRegistry = nk.storageRead([{
-        collection: MATCH_REGISTRY_COLLECTION,
-        key: registryKey,
-        userId: SYSTEM_USER,
-      }]);
-
-      if (confirmedRegistry.length > 0) {
-        const confirmedMatchId = confirmedRegistry[0].value.matchId as string;
-
-        // Verify this match exists
-        const query2 = `+label.channel_id:${channelId}`;
-        const matches2 = nk.matchList(10, true, null, null, 10, query2);
-        const exists2 = matches2.some(m => m.matchId === confirmedMatchId);
-
-        if (exists2) {
-          logger.info(`Using other player's match: ${confirmedMatchId}`);
-          return JSON.stringify({ match_id: confirmedMatchId });
-        }
-
-        // That match doesn't exist either, retry the whole process
-        logger.info(`Other player's match doesn't exist, retrying...`);
-        continue;
-      }
-
-      // Registry disappeared, retry
+      // Failed to update registry, the match is orphaned
+      logger.error(`Failed to register match ${matchId}: ${e}`);
+      // Continue retry loop, the orphaned match will be cleaned up by Nakama
       continue;
     }
   }
 
   throw new Error(`Failed to find or create match after ${MAX_RETRIES} attempts`);
 };
+
+function busyWait(ms: number): void {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    // busy wait
+  }
+}
