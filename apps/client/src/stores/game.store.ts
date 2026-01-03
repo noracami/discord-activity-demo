@@ -132,7 +132,15 @@ export const useGameStore = defineStore('game', () => {
     player1Ready.value = data.player1Ready;
     player2Ready.value = data.player2Ready;
     readyStartTime.value = data.readyStartTime;
-    turnStartTime.value = data.turnStartTime ? Date.now() : null; // Convert to client time
+
+    // Always reset timer to now if game is in progress
+    // This gives full turn time after reconnection
+    if (data.phase === 'playing' && data.currentTurn) {
+      turnStartTime.value = Date.now();
+    } else {
+      turnStartTime.value = null;
+    }
+
     winner.value = data.winner;
     winReason.value = data.winReason;
     rematchVotes.value = data.rematchVotes;
@@ -140,7 +148,7 @@ export const useGameStore = defineStore('game', () => {
     opponentDisconnected.value = false; // Reset on full sync
 
     // Note: myRole will be updated by the watch in App.vue
-    console.log('STATE_SYNC processed, phase:', phase.value, 'currentTurn:', currentTurn.value);
+    console.log('STATE_SYNC processed, phase:', phase.value, 'currentTurn:', currentTurn.value, 'turnStartTime:', turnStartTime.value);
   }
 
   function handlePlayerJoined(data: any) {

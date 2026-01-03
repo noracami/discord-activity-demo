@@ -86,6 +86,12 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
       state.player1.sessionId = presence.sessionId; // Update session ID
       reconnectedRole = 'player1';
       logger.info(`Player 1 (${presence.username}) reconnected!`);
+
+      // Reset turn timer if game is in progress (give full turn time)
+      if (state.phase === 'playing') {
+        state.turnStartTick = tick;
+        logger.info(`Reset turnStartTick to ${tick} for reconnected player`);
+      }
     } else if (state.player2?.isDisconnected && state.player2.odiscrdId === presence.userId) {
       // Player 2 reconnected
       state.player2.isDisconnected = false;
@@ -93,6 +99,12 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
       state.player2.sessionId = presence.sessionId; // Update session ID
       reconnectedRole = 'player2';
       logger.info(`Player 2 (${presence.username}) reconnected!`);
+
+      // Reset turn timer if game is in progress (give full turn time)
+      if (state.phase === 'playing') {
+        state.turnStartTick = tick;
+        logger.info(`Reset turnStartTick to ${tick} for reconnected player`);
+      }
     } else {
       logger.info(`No reconnection match found, treating as new player`);
     }
