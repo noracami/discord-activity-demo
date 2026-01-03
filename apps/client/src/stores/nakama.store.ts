@@ -108,8 +108,16 @@ export const useNakamaStore = defineStore('nakama', () => {
 
     console.log(`Reconnect attempt ${reconnectAttempts.value}/${maxReconnectAttempts}`);
 
+    // Clean up old socket before reconnecting
+    try {
+      disconnectSocket();
+    } catch (e) {
+      console.log('Error disconnecting old socket:', e);
+    }
+
     // Reset state for reconnection
     isConnected.value = false;
+    matchId.value = null;
     error.value = null;
 
     await connect(
@@ -180,11 +188,11 @@ export const useNakamaStore = defineStore('nakama', () => {
     };
 
     socket.ondisconnect = () => {
-      console.log('Socket disconnected');
+      console.log('Socket disconnected, isReconnecting:', isReconnecting.value, 'isConnecting:', isConnecting.value);
       isConnected.value = false;
 
-      // Attempt to reconnect if we have connection params and not intentionally disconnecting
-      if (connectionParams && !isReconnecting.value) {
+      // Attempt to reconnect if we have connection params and not already reconnecting/connecting
+      if (connectionParams && !isReconnecting.value && !isConnecting.value) {
         console.log('Unexpected disconnect, attempting to reconnect...');
         scheduleReconnect();
       }

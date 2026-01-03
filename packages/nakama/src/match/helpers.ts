@@ -12,11 +12,14 @@ export function buildStateSyncPayload(state: MatchState) {
     board: state.board.map((piece, index) => piece ? {
       owner: piece.owner,
       cellIndex: index,
+      placedAt: piece.placedTick, // Include for FIFO sorting on client
       isAboutToRemove: isAboutToRemove(state, piece),
     } : null),
     currentTurn: state.currentTurn,
     player1Ready: state.player1Ready,
     player2Ready: state.player2Ready,
+    readyStartTime: state.readyStartTick, // Include ready start time
+    turnStartTime: state.turnStartTick, // Include turn start time
     winner: state.winner,
     winReason: state.winReason,
     rematchVotes: state.rematchVotes,

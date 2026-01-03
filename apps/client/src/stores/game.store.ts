@@ -123,6 +123,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function syncState(data: any) {
+    console.log('STATE_SYNC received:', JSON.stringify(data));
     phase.value = data.phase;
     player1.value = data.player1;
     player2.value = data.player2;
@@ -131,13 +132,15 @@ export const useGameStore = defineStore('game', () => {
     player1Ready.value = data.player1Ready;
     player2Ready.value = data.player2Ready;
     readyStartTime.value = data.readyStartTime;
+    turnStartTime.value = data.turnStartTime ? Date.now() : null; // Convert to client time
     winner.value = data.winner;
     winReason.value = data.winReason;
     rematchVotes.value = data.rematchVotes;
     hasEmptySlot.value = data.hasEmptySlot;
+    opponentDisconnected.value = false; // Reset on full sync
 
-    // Determine my role based on my Discord ID
-    // This will be set after we know our Discord ID
+    // Note: myRole will be updated by the watch in App.vue
+    console.log('STATE_SYNC processed, phase:', phase.value, 'currentTurn:', currentTurn.value);
   }
 
   function handlePlayerJoined(data: any) {
