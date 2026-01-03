@@ -64,11 +64,19 @@ export const useNakamaStore = defineStore('nakama', () => {
       setupSocketHandlers(socket);
 
       // Find or create match for this channel
-      const mId = await findOrCreateMatch(channelId);
+      let mId = await findOrCreateMatch(channelId);
       matchId.value = mId;
 
-      // Join match
-      await joinMatch(mId);
+      // Join match - if fails, clear registry and retry once
+      try {
+        await joinMatch(mId);
+      } catch (joinErr) {
+        console.log('joinMatch failed, clearing registry and retrying...', joinErr);
+        await clearMatch(channelId);
+        mId = await findOrCreateMatch(channelId);
+        matchId.value = mId;
+        await joinMatch(mId);
+      }
 
       isConnected.value = true;
       isReconnecting.value = false;
@@ -137,7 +145,7 @@ export const useNakamaStore = defineStore('nakama', () => {
 
       // Always use findOrCreateMatch to get the correct matchId for this channelId
       // This ensures we always join the registered match, not an orphaned one
-      const correctMatchId = await findOrCreateMatch(connectionParams.channelId);
+      let correctMatchId = await findOrCreateMatch(connectionParams.channelId);
 
       // If we were in a different match, log it
       if (oldMatchId && oldMatchId !== correctMatchId) {
@@ -145,7 +153,17 @@ export const useNakamaStore = defineStore('nakama', () => {
       }
 
       matchId.value = correctMatchId;
-      await joinMatch(correctMatchId);
+
+      // Join match - if fails, clear registry and retry once
+      try {
+        await joinMatch(correctMatchId);
+      } catch (joinErr) {
+        console.log('joinMatch failed, clearing registry and retrying...', joinErr);
+        await clearMatch(connectionParams.channelId);
+        correctMatchId = await findOrCreateMatch(connectionParams.channelId);
+        matchId.value = correctMatchId;
+        await joinMatch(correctMatchId);
+      }
 
       isConnected.value = true;
       isReconnecting.value = false;
