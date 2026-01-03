@@ -26,10 +26,11 @@ export const useGameStore = defineStore('game', () => {
   const rematchVotes = ref<RematchVotes>({ player1: null, player2: null });
   const hasEmptySlot = ref(true);
   const myRole = ref<PlayerRole>('spectator');
+  const pendingMove = ref(false); // Prevent rapid clicks
 
   // Getters
   const isMyTurn = computed(() => {
-    return phase.value === 'playing' && currentTurn.value === myRole.value;
+    return phase.value === 'playing' && currentTurn.value === myRole.value && !pendingMove.value;
   });
 
   const canJoin = computed(() => {
@@ -72,21 +73,27 @@ export const useGameStore = defineStore('game', () => {
         phase.value = 'playing';
         currentTurn.value = data.firstTurn;
         turnStartTime.value = Date.now();
+        // Reset board to ensure clean state
+        board.value = Array(9).fill(null);
+        pendingMove.value = false;
         break;
 
       case OpCode.MOVE_MADE:
         handleMoveMade(data);
+        pendingMove.value = false;
         break;
 
       case OpCode.TURN_CHANGE:
         currentTurn.value = data.currentTurn;
         turnStartTime.value = Date.now();
+        pendingMove.value = false;
         break;
 
       case OpCode.GAME_END:
         phase.value = 'ended';
         winner.value = data.winner;
         winReason.value = data.reason;
+        pendingMove.value = false;
         break;
 
       case OpCode.REMATCH_UPDATE:
@@ -99,6 +106,7 @@ export const useGameStore = defineStore('game', () => {
 
       case OpCode.ERROR:
         console.error('Game error:', data.code, data.message);
+        pendingMove.value = false; // Clear pending move on error
         break;
     }
   }
@@ -230,6 +238,10 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function setPendingMove(pending: boolean) {
+    pendingMove.value = pending;
+  }
+
   function reset() {
     phase.value = 'waiting';
     player1.value = null;
@@ -245,6 +257,7 @@ export const useGameStore = defineStore('game', () => {
     rematchVotes.value = { player1: null, player2: null };
     hasEmptySlot.value = true;
     myRole.value = 'spectator';
+    pendingMove.value = false;
   }
 
   return {
@@ -271,6 +284,7 @@ export const useGameStore = defineStore('game', () => {
     // Actions
     handleServerMessage,
     setMyRole,
+    setPendingMove,
     reset,
   };
 });

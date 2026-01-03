@@ -96,6 +96,7 @@ function hashCode(str: string): number {
 
 function handleMove(cellIndex: number) {
   if (game.isMyTurn) {
+    game.setPendingMove(true);
     nakama.move(cellIndex);
   }
 }
