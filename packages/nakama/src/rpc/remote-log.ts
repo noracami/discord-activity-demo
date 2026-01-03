@@ -133,7 +133,17 @@ export const queryLogsRpc: nkruntime.RpcFunction = function (
 
       allLogs = queryResult.map((row: any) => {
         try {
-          return typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+          // Handle different formats: string, object, or byte array
+          if (typeof row.value === 'string') {
+            return JSON.parse(row.value);
+          } else if (Array.isArray(row.value)) {
+            // Byte array - decode to string then parse
+            const str = String.fromCharCode(...row.value);
+            return JSON.parse(str);
+          } else if (typeof row.value === 'object') {
+            return row.value;
+          }
+          return row.value;
         } catch {
           return row.value;
         }
