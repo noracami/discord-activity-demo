@@ -134,36 +134,25 @@ export const useNakamaStore = defineStore('nakama', () => {
       const socket = await connectSocket();
       setupSocketHandlers(socket);
 
-      // Try to rejoin old match first (if server is still running)
-      if (oldMatchId) {
-        try {
-          console.log(`Trying to rejoin old match: ${oldMatchId}`);
-          await joinMatch(oldMatchId);
-          matchId.value = oldMatchId;
-          isConnected.value = true;
-          isReconnecting.value = false;
-          reconnectAttempts.value = 0;
-          console.log('Successfully rejoined old match:', oldMatchId);
-          enableRemoteLogging(oldMatchId);
-          setLogMatchId(oldMatchId);
-          return;
-        } catch (e) {
-          console.log('Failed to rejoin old match, will find/create:', e);
-        }
+      // Always use findOrCreateMatch to get the correct matchId for this channelId
+      // This ensures we always join the registered match, not an orphaned one
+      const correctMatchId = await findOrCreateMatch(connectionParams.channelId);
+
+      // If we were in a different match, log it
+      if (oldMatchId && oldMatchId !== correctMatchId) {
+        console.log(`Match changed: ${oldMatchId} -> ${correctMatchId}`);
       }
 
-      // Fallback: find or create match (handles server restart case)
-      const mId = await findOrCreateMatch(connectionParams.channelId);
-      matchId.value = mId;
-      await joinMatch(mId);
+      matchId.value = correctMatchId;
+      await joinMatch(correctMatchId);
 
       isConnected.value = true;
       isReconnecting.value = false;
       reconnectAttempts.value = 0;
-      console.log('Nakama reconnected to match:', mId);
+      console.log('Nakama reconnected to match:', correctMatchId);
 
-      enableRemoteLogging(mId);
-      setLogMatchId(mId);
+      enableRemoteLogging(correctMatchId);
+      setLogMatchId(correctMatchId);
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Reconnection failed';
       console.error('Nakama reconnection failed:', err);
