@@ -2,7 +2,7 @@
 
 **Last Updated: January 3, 2026**
 
-**[Your Name/Team Name]** ("we", "us", or "our") operates **[Your Activity Name]**. This policy explains how we handle information when you use our Discord Activity.
+**noracami** ("we", "us", or "our") operates **無盡圈圈叉叉 (Infinite Tic-Tac-Toe)**. This policy explains how we handle information when you use our Discord Activity.
 
 ### 1. Information We Collect
 
@@ -39,5 +39,5 @@ If you wish to have your game data (linked to your Discord User ID) deleted from
 
 For any privacy-related inquiries, please reach out to:
 
-- **Developer:** [Your Name/Discord Tag]
-- **Discord Server:** [Optional Link]
+- **Developer:** marshmellouo (Discord)
+- **GitHub:** [noracami](https://github.com/noracami)

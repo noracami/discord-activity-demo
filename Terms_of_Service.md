@@ -2,7 +2,7 @@
 
 **Last Updated: January 3, 2026**
 
-Welcome to **[Your Activity Name]** (the "Activity"). By accessing or using this Activity within Discord, you agree to be bound by these Terms of Service ("Terms").
+Welcome to **無盡圈圈叉叉 (Infinite Tic-Tac-Toe)** (the "Activity"). By accessing or using this Activity within Discord, you agree to be bound by these Terms of Service ("Terms").
 
 ### 1. Acceptance of Terms
 
@@ -18,7 +18,7 @@ By using the Activity, you confirm that you are at least the minimum age require
 
 ### 3. Intellectual Property
 
-All content, including but not limited to artwork, code, and game design, is the property of **[Your Name/Team Name]** or its licensors. You may not use these assets without prior written consent.
+All content, including but not limited to artwork, code, and game design, is the property of **noracami** or its licensors. You may not use these assets without prior written consent.
 
 ### 4. Disclaimer of Warranties
 
@@ -26,7 +26,7 @@ The Activity is provided on an "AS IS" and "AS AVAILABLE" basis. We make no warr
 
 ### 5. Limitation of Liability
 
-To the maximum extent permitted by law, **[Your Name/Team Name]** shall not be liable for any indirect, incidental, or consequential damages resulting from your use of the Activity.
+To the maximum extent permitted by law, **noracami** shall not be liable for any indirect, incidental, or consequential damages resulting from your use of the Activity.
 
 ### 6. Changes to Terms
 
@@ -34,4 +34,4 @@ We reserve the right to modify these Terms at any time. Your continued use of th
 
 ### 7. Contact
 
-If you have any questions, please contact us via Discord at **[Your Discord Username/Server Link]**.
+If you have any questions, please contact us via Discord at **marshmellouo** or on [GitHub](https://github.com/noracami).
