@@ -43,13 +43,18 @@ packages/
 
 #### ⚠️ 部署前必須更新版本號
 
-每次部署前，更新 `package.json` 的 `version`：
+每次部署前，**同時**更新以下兩個 `package.json` 的 `version`：
+
+1. `apps/client/package.json`
+2. `packages/nakama/package.json`
 
 ```json
 {
   "version": "1.0.1"
 }
 ```
+
+> 兩個版本號必須相同！
 
 原因：Client 和 Server 會比對版本號，版本不符時舊 Client 自動 reload。
 

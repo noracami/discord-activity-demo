@@ -3,9 +3,9 @@ import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 import { readFileSync } from 'node:fs';
 
-// Read version from root package.json
-const rootPkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'));
-const clientVersion = rootPkg.version;
+// Read version from client package.json (always exists in build context)
+const clientPkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+const clientVersion = process.env.VITE_CLIENT_VERSION || clientPkg.version;
 
 export default defineConfig({
   plugins: [vue()],

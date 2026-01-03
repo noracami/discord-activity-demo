@@ -1,9 +1,9 @@
 import * as esbuild from 'esbuild';
 import { readFileSync } from 'node:fs';
 
-// Read version from root package.json
-const rootPkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'));
-const clientVersion = rootPkg.version;
+// Read version from nakama package.json (always exists in build context)
+const nakamakg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
+const clientVersion = process.env.CLIENT_VERSION || nakamakg.version;
 
 console.log(`Building with CLIENT_VERSION: ${clientVersion}`);
 

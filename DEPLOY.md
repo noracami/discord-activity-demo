@@ -21,14 +21,21 @@
 
 ### ⚠️ 更新版本號（重要）
 
-每次部署新版本前，**必須**更新 `package.json` 中的 `version`：
+每次部署新版本前，**必須**同時更新以下兩個 `package.json` 的 `version`：
 
 ```bash
-# 根目錄 package.json
+# 1. apps/client/package.json
 {
-  "version": "1.0.1"  // 遞增版本號
+  "version": "1.0.1"
+}
+
+# 2. packages/nakama/package.json
+{
+  "version": "1.0.1"
 }
 ```
+
+> **兩個版本號必須相同！**
 
 **原因**：Client 和 Server 會比對版本號，若不一致，舊版 Client 會自動 reload 取得新版。若忘記更新版本號，新舊版本相同，舊 Client 不會 reload。
 
@@ -36,6 +43,10 @@
 - 修正 bug：`1.0.0` → `1.0.1`
 - 新增功能：`1.0.0` → `1.1.0`
 - 重大變更：`1.0.0` → `2.0.0`
+
+**或使用環境變數**（Zeabur）：
+- Client: 設定 `VITE_CLIENT_VERSION=1.0.1`
+- Nakama: 設定 `CLIENT_VERSION=1.0.1`
 
 ---
 
