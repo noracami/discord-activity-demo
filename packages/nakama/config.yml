@@ -19,6 +19,7 @@ socket:
 
 runtime:
   js_entrypoint: "build/index.js"
+  http_key: "defaultkey"
 
 console:
   # Override with environment variables in production
