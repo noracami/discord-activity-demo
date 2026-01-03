@@ -157,13 +157,14 @@ export function restoreMatchState(
   state.rematchVotes = stored.rematchVotes;
 
   // Mark both players as disconnected (they need to reconnect)
+  // Use null for disconnectedAtTick so timeout won't trigger until they actually disconnect during game
   if (state.player1) {
     state.player1.isDisconnected = true;
-    state.player1.disconnectedAtTick = 0; // Will be updated on first tick
+    state.player1.disconnectedAtTick = null; // null = waiting for reconnect after restore, no timeout
   }
   if (state.player2) {
     state.player2.isDisconnected = true;
-    state.player2.disconnectedAtTick = 0;
+    state.player2.disconnectedAtTick = null;
   }
 
   // Reset ready state (players need to re-ready after reconnect)

@@ -355,6 +355,11 @@ export function handleMove(
   // Make move
   const { removedCellIndex } = makeMove(state, role, cellIndex, tick);
 
+  // Log presences before broadcast
+  const presenceCount = Object.keys(state.presences).length;
+  const presenceIds = Object.keys(state.presences);
+  logger.info(`handleMove: broadcasting MOVE_MADE to ${presenceCount} presences: ${presenceIds.join(', ')}`);
+
   // Broadcast move
   dispatcher.broadcastMessage(
     OpCode.MOVE_MADE,

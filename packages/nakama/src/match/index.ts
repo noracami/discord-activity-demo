@@ -75,6 +75,10 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
     // Check if this is a reconnecting player
     let reconnectedRole: 'player1' | 'player2' | null = null;
 
+    logger.info(`Reconnection check: presence.userId=${presence.userId}`);
+    logger.info(`  player1: odiscrdId=${state.player1?.odiscrdId}, isDisconnected=${state.player1?.isDisconnected}, match=${state.player1?.odiscrdId === presence.userId}`);
+    logger.info(`  player2: odiscrdId=${state.player2?.odiscrdId}, isDisconnected=${state.player2?.isDisconnected}, match=${state.player2?.odiscrdId === presence.userId}`);
+
     if (state.player1?.isDisconnected && state.player1.odiscrdId === presence.userId) {
       // Player 1 reconnected
       state.player1.isDisconnected = false;
@@ -89,6 +93,8 @@ export const matchJoin: nkruntime.MatchJoinFunction<MatchState> = function (
       state.player2.sessionId = presence.sessionId; // Update session ID
       reconnectedRole = 'player2';
       logger.info(`Player 2 (${presence.username}) reconnected!`);
+    } else {
+      logger.info(`No reconnection match found, treating as new player`);
     }
 
     if (reconnectedRole) {
