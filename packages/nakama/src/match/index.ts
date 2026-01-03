@@ -7,6 +7,9 @@ import { saveMatchState, loadMatchState, deleteMatchState, restoreMatchState } f
 // Save state every N ticks (e.g., every 5 seconds at 10 tick/s)
 const SAVE_INTERVAL_TICKS = 50;
 
+// Broadcast version check every 30 seconds (300 ticks at 10 tick/s)
+const VERSION_CHECK_INTERVAL_TICKS = 300;
+
 /**
  * Match initialization
  */
@@ -360,6 +363,17 @@ export const matchLoop: nkruntime.MatchLoopFunction<MatchState> = function (
   // Periodically save state to storage (every SAVE_INTERVAL_TICKS)
   if (tick % SAVE_INTERVAL_TICKS === 0) {
     saveMatchState(nk, logger, state);
+  }
+
+  // Periodically broadcast version check (every VERSION_CHECK_INTERVAL_TICKS)
+  if (tick % VERSION_CHECK_INTERVAL_TICKS === 0) {
+    dispatcher.broadcastMessage(
+      OpCode.VERSION_CHECK,
+      JSON.stringify({ version: __CLIENT_VERSION__ }),
+      null,
+      null,
+      true
+    );
   }
 
   return { state };

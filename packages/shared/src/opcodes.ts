@@ -25,5 +25,6 @@ export enum OpCode {
   PLAYER_KICKED = 110,  // A player was kicked
   PLAYER_DISCONNECTED = 111, // A player temporarily disconnected
   PLAYER_RECONNECTED = 112,  // A player reconnected
+  VERSION_CHECK = 113,       // Client version check
   ERROR = 199,          // Error message
 }

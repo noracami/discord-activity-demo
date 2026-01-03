@@ -2,8 +2,14 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 
+// Generate build timestamp for version checking
+const buildTimestamp = Date.now().toString();
+
 export default defineConfig({
   plugins: [vue()],
+  define: {
+    __CLIENT_VERSION__: JSON.stringify(buildTimestamp),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

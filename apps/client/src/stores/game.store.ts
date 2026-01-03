@@ -117,10 +117,31 @@ export const useGameStore = defineStore('game', () => {
         handlePlayerReconnected(data);
         break;
 
+      case OpCode.VERSION_CHECK:
+        handleVersionCheck(data);
+        break;
+
       case OpCode.ERROR:
         console.error('Game error:', data.code, data.message);
         pendingMove.value = false; // Clear pending move on error
         break;
+    }
+  }
+
+  function handleVersionCheck(data: { version: string }) {
+    const serverVersion = data.version;
+    const clientVersion = __CLIENT_VERSION__;
+
+    if (serverVersion !== clientVersion) {
+      console.log(`Version mismatch: server=${serverVersion}, client=${clientVersion}`);
+
+      // Only auto-reload if not in playing phase (avoid disrupting active game)
+      if (phase.value !== 'playing') {
+        console.log('Auto-reloading to get new version...');
+        window.location.reload();
+      } else {
+        console.log('In playing phase, will reload after game ends');
+      }
     }
   }
 
