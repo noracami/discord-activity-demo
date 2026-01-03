@@ -1,14 +1,16 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
+import { readFileSync } from 'node:fs';
 
-// Generate build timestamp for version checking
-const buildTimestamp = Date.now().toString();
+// Read version from root package.json
+const rootPkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'));
+const clientVersion = rootPkg.version;
 
 export default defineConfig({
   plugins: [vue()],
   define: {
-    __CLIENT_VERSION__: JSON.stringify(buildTimestamp),
+    __CLIENT_VERSION__: JSON.stringify(clientVersion),
   },
   resolve: {
     alias: {

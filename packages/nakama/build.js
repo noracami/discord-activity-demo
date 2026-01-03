@@ -1,9 +1,11 @@
 import * as esbuild from 'esbuild';
+import { readFileSync } from 'node:fs';
 
-// Generate build timestamp for version checking
-const buildTimestamp = Date.now().toString();
+// Read version from root package.json
+const rootPkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'));
+const clientVersion = rootPkg.version;
 
-console.log(`Building with CLIENT_VERSION: ${buildTimestamp}`);
+console.log(`Building with CLIENT_VERSION: ${clientVersion}`);
 
 await esbuild.build({
   entryPoints: ['src/main.ts'],
@@ -13,7 +15,7 @@ await esbuild.build({
   target: 'es2020',
   external: ['nakama-runtime'],
   define: {
-    '__CLIENT_VERSION__': JSON.stringify(buildTimestamp),
+    '__CLIENT_VERSION__': JSON.stringify(clientVersion),
   },
 });
 
