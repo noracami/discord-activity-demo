@@ -84,8 +84,10 @@ const nakama = useNakamaStore();
 // Computed properties
 const isPlayer = computed(() => game.myRole === 'player1' || game.myRole === 'player2');
 
-// Check if both players are still present for rematch
+// Check if rematch is possible (both players present AND not won by disconnect)
 const canRematch = computed(() => {
+  // Don't show rematch if opponent left/disconnected
+  if (game.winReason === 'opponent_left') return false;
   return isPlayer.value && game.player1 !== null && game.player2 !== null;
 });
 

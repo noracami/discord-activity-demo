@@ -544,8 +544,8 @@ export function handleRematchVote(
 
       logger.info('Rematch started!');
     } else {
-      // Someone declined - they become spectator
-      if (!state.rematchVotes.player1 && state.player1) {
+      // Someone declined - BOTH players leave seats and return to lobby
+      if (state.player1) {
         const player = state.player1;
         state.player1 = null;
         state.player1Ready = false;
@@ -559,7 +559,7 @@ export function handleRematchVote(
         );
       }
 
-      if (!state.rematchVotes.player2 && state.player2) {
+      if (state.player2) {
         const player = state.player2;
         state.player2 = null;
         state.player2Ready = false;
