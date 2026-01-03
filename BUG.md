@@ -26,24 +26,6 @@
 
 ---
 
-### BUG-008: 落子時 cellIndex 為 undefined
-- **狀態:** 🔴 Open
-- **優先級:** Critical
-- **描述:** 點擊棋盤落子時，伺服器收到的 cellIndex 是 undefined，導致 INVALID_MOVE 錯誤
-- **伺服器 log:**
-  ```
-  handleMove: cellIndex=undefined
-  handleMove: INVALID_MOVE - cellIndex=undefined, board[undefined]=undefined
-  ```
-- **可能原因:**
-  - [ ] GameBoard 元件沒有正確傳遞 cellIndex
-  - [ ] 點擊事件處理有問題
-- **相關檔案:**
-  - `apps/client/src/components/game/GameBoard.vue`
-  - `apps/client/src/stores/nakama.store.ts`
-
----
-
 ### BUG-006: FIFO 移除時機不符合規則
 - **狀態:** 🔴 Open
 - **優先級:** Medium
@@ -93,6 +75,72 @@
 
 ---
 
+### BUG-008: 落子時 cellIndex 為 undefined
+- **解決日期:** 2026-01-03
+- **優先級:** Critical
+- **症狀:** 點擊棋盤落子時，伺服器收到的 cellIndex 是 undefined，導致 INVALID_MOVE 錯誤
+- **伺服器 log:**
+  ```
+  matchLoop[1]: rawData="{"cellIndex":0}", parsed={}, parsedType=object
+  handleMove: cellIndex=undefined
+  handleMove: INVALID_MOVE - cellIndex=undefined, board[undefined]=undefined
+  ```
+
+#### 根因分析
+
+**問題發現過程：**
+1. 最初懷疑是前端沒有正確傳遞 cellIndex
+2. 透過遠端 log 確認前端確實有送出正確資料 `{"cellIndex": 7}`
+3. 伺服器 log 顯示 `rawData` 正確但 `parsed={}` 是空物件
+4. 加入詳細除錯日誌後發現：
+   ```
+   matchLoop[1]: BEFORE JSON.parse, message.data exists=true, length=undefined
+   matchLoop[1]: skipping JSON.parse - no data
+   ```
+
+**根本原因：**
+Nakama 使用 **goja**（Go 實作的 ECMAScript 5.1 runtime）執行 JavaScript。在 goja 中，`message.data` 是一個 `ArrayBuffer` 或類似的二進位物件，**不具有標準的 `.length` 屬性**。
+
+原本的程式碼：
+```typescript
+if (message.data && message.data.length > 0) {
+  data = JSON.parse(nk.binaryToString(message.data));
+}
+```
+
+- `message.data` 存在 ✅ (truthy)
+- `message.data.length` 返回 `undefined` ❌
+- `undefined > 0` = `false`
+- 導致 `JSON.parse` 被跳過，`data` 保持為空物件 `{}`
+
+**為什麼 Turn timeout 自動落子可以運作？**
+因為自動落子時，伺服器直接建立物件傳給 `handleMove`，沒有經過 `JSON.parse`：
+```typescript
+return handleMove(state, fakeSender, { cellIndex }, tick, dispatcher, logger);
+```
+
+#### 解決方案
+
+改用已經轉換好的字串長度來檢查：
+```typescript
+const rawDataStr = message.data ? nk.binaryToString(message.data) : '';
+
+if (rawDataStr.length > 0) {
+  data = JSON.parse(rawDataStr);
+}
+```
+
+- **相關 commit:** `39dc863`
+- **相關檔案:** `packages/nakama/src/match/index.ts`
+
+#### 學到的經驗
+
+1. **Nakama goja runtime 與標準 Node.js 有差異**：不能假設所有 JavaScript API 行為一致
+2. **二進位資料存取方式不同**：`message.data` 需要先用 `nk.binaryToString()` 轉換
+3. **詳細的除錯日誌很重要**：逐步追蹤才能找到真正的問題點
+
+---
+
 ## 功能需求
 
 ### FEAT-001: 透過 curl 查詢伺服器端 log
@@ -129,4 +177,4 @@
 | BUG-005 | 結束畫面按鈕無反應 | High | 🟢 Resolved |
 | BUG-006 | FIFO 移除時機不符合規則 | Medium | 🔴 Open |
 | BUG-007 | 取消準備按鈕無效 | High | 🟢 Resolved |
-| BUG-008 | 落子時 cellIndex 為 undefined | Critical | 🔴 Open |
+| BUG-008 | 落子時 cellIndex 為 undefined | Critical | 🟢 Resolved |
